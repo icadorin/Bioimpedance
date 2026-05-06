@@ -1,3 +1,10 @@
+import { useState } from 'react';
+import { userSchema } from '../validation/userSchema';
+import type { UserInput } from '../types';
+import type { PhysicResult, RecommendationResult } from '../types/result.types';
+
+import { interpretBodyFat } from '../utils/interpretation';
+import { generateRecommendation } from '../utils/recommendationEngine';
 import {
   calculateIMC,
   calculateBMR,
@@ -8,18 +15,7 @@ import {
   calculateFFMI,
 } from '../utils/calculations';
 
-import type { UserInput, Gender } from '../types';
-import { useState } from 'react';
-
-interface Result {
-  imc: number;
-  bmr: number;
-  tdee: number;
-  bodyFat: number;
-  leanMass: number;
-  fatMass: number;
-  ffmi: number;
-}
+type Result = PhysicResult & RecommendationResult;
 
 export default function CalculatorPage() {
   const [data, setData] = useState<UserInput>({
@@ -38,31 +34,45 @@ export default function CalculatorPage() {
 
   const [result, setResult] = useState<Result | null>(null);
 
+  const numericKeys: (keyof UserInput)[] = ['weight', 'height', 'age', 'waist', 'neck', 'hip'];
+
+  function isNumericKey(key: keyof UserInput): boolean {
+    return numericKeys.includes(key);
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
 
-    setData((prev: UserInput) => {
-      const key = name as keyof UserInput;
+    const key = name as keyof UserInput;
 
-      // campos que são string
-      if (key === 'gender' || key === 'activityLevel' || key === 'objective') {
-        return { ...prev, [key]: value };
-      }
-
-      // campos numéricos
-      return { ...prev, [key]: Number(value) };
-    });
+    setData((prev) => ({
+      ...prev,
+      [key]: isNumericKey(key) ? (value === '' ? 0 : Number(value)) : value,
+    }));
   }
 
   function handleCalculate() {
-    const imc = calculateIMC(data);
-    const bmr = calculateBMR(data);
-    const tdee = calculateTDEE(data, bmr);
-    const bodyFat = calculateBodyFat(data);
+    const parsed = userSchema.safeParse(data);
 
-    const leanMass = calculateLeanMass(data.weight, bodyFat);
-    const fatMass = calculateFatMass(data.weight, bodyFat);
-    const ffmi = calculateFFMI(leanMass, data.height);
+    if (!parsed.success) {
+      console.log(parsed.error.format());
+      alert('Preencha os campos corretamente antes de calcular');
+      return;
+    }
+
+    const validData = parsed.data;
+
+    const imc = calculateIMC(validData);
+    const bmr = calculateBMR(validData);
+    const tdee = calculateTDEE(validData, bmr);
+    const bodyFat = calculateBodyFat(validData);
+
+    const leanMass = calculateLeanMass(validData.weight, bodyFat);
+    const fatMass = calculateFatMass(validData.weight, bodyFat);
+    const ffmi = calculateFFMI(leanMass, validData.height);
+
+    const recommendation = generateRecommendation(validData, tdee, bodyFat);
+    const bodyFatLevel = interpretBodyFat(validData.gender, bodyFat);
 
     setResult({
       imc,
@@ -72,6 +82,14 @@ export default function CalculatorPage() {
       leanMass,
       fatMass,
       ffmi,
+      bodyFatLevel,
+
+      targetCalories: recommendation.calories,
+      protein: recommendation.protein,
+      cardio: recommendation.cardio,
+      notes: recommendation.notes,
+
+      trainingType: recommendation.trainingType,
     });
   }
 
@@ -80,11 +98,10 @@ export default function CalculatorPage() {
       <h1>Calculadora Física</h1>
 
       <div className="form">
-        {/* Dados básicos */}
         <h2>Dados básicos</h2>
 
         <input name="weight" placeholder="Peso (kg)" onChange={handleChange} />
-        <input name="height" placeholder="Altura (m)" onChange={handleChange} />
+        <input name="height" placeholder="Altura (cm)" onChange={handleChange} />
         <input name="age" placeholder="Idade" onChange={handleChange} />
 
         <select name="gender" onChange={handleChange}>
@@ -92,7 +109,6 @@ export default function CalculatorPage() {
           <option value="female">Feminino</option>
         </select>
 
-        {/* Atividade */}
         <h2>Nível de atividade</h2>
 
         <select name="activityLevel" onChange={handleChange}>
@@ -103,7 +119,6 @@ export default function CalculatorPage() {
           <option value="very_active">Muito ativo</option>
         </select>
 
-        {/* Objetivo */}
         <h2>Objetivo</h2>
 
         <select name="objective" onChange={handleChange}>
@@ -112,7 +127,6 @@ export default function CalculatorPage() {
           <option value="bulking">Bulking (ganhar massa)</option>
         </select>
 
-        {/* Medidas corporais */}
         <h2>Medidas corporais</h2>
 
         <input name="waist" placeholder="Cintura (cm)" onChange={handleChange} />
@@ -125,21 +139,55 @@ export default function CalculatorPage() {
         <button onClick={handleCalculate}>Calcular</button>
       </div>
 
-      {/* Resultados */}
       {result && (
-        <div style={{ marginTop: 20 }}>
-          <h2>Resultados</h2>
+        <div className="dashboard">
+          <div className="card">
+            <h3>IMC</h3>
+            <div>{result.imc.toFixed(2)}</div>
+          </div>
 
-          <p>IMC: {result.imc.toFixed(2)}</p>
-          <p>TMB: {result.bmr.toFixed(2)}</p>
-          <p>TDEE: {result.tdee.toFixed(2)}</p>
+          <div className="card">
+            <h3>FFMI</h3>
+            <div>{result.ffmi.toFixed(2)}</div>
+          </div>
 
-          <p>% Gordura: {result.bodyFat.toFixed(2)}%</p>
+          <div className="card">
+            <h3>% Gordura</h3>
 
-          <p>Massa magra: {result.leanMass.toFixed(2)} kg</p>
-          <p>Massa gorda: {result.fatMass.toFixed(2)} kg</p>
+            <div>{result.bodyFat > 0 ? `${result.bodyFat.toFixed(2)}%` : 'Sem dados'}</div>
 
-          <p>FFMI: {result.ffmi.toFixed(2)}</p>
+            {result.bodyFat > 0 && <small>{result.bodyFatLevel}</small>}
+          </div>
+
+          <div className="card">
+            <h3>TMB</h3>
+            <div>{result.bmr.toFixed(0)} kcal</div>
+          </div>
+
+          <div className="card">
+            <h3>TDEE</h3>
+            <div>{result.tdee.toFixed(0)} kcal</div>
+          </div>
+
+          <div className="card">
+            <h3>Calorias alvo</h3>
+            <div>{result.targetCalories.toFixed(0)} kcal</div>
+          </div>
+
+          <div className="card">
+            <h3>Proteína</h3>
+            <div>{result.protein.toFixed(0)} g</div>
+          </div>
+
+          <div className="card">
+            <h3>Massa magra</h3>
+            <div>{result.leanMass.toFixed(1)} kg</div>
+          </div>
+
+          <div className="card">
+            <h3>Massa gorda</h3>
+            <div>{result.fatMass.toFixed(1)} kg</div>
+          </div>
         </div>
       )}
     </div>

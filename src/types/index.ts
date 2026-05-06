@@ -15,7 +15,7 @@ export type Objective =
 
 export interface UserInput {
   weight: number; // peso em kg
-  height: number; // altura em metros (ex: 1.75)
+  height: number; // cm
   age: number; // idade
 
   gender: Gender;
@@ -23,7 +23,7 @@ export interface UserInput {
   activityLevel: ActivityLevel; // nível de atividade física
   objective: Objective; // objetivo físico
 
-  waist?: number; // cintura em cm (ex: 80)
-  neck?: number; // pescoço em cm
-  hip?: number; // quadril em cm (usado principalmente para mulheres)
+  waist: number; // cintura em cm (ex: 80)
+  neck: number; // pescoço em cm
+  hip: number; // quadril em cm (usado principalmente para mulheres)
 }

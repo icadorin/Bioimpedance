@@ -5,7 +5,10 @@ import type { UserInput } from '../types';
  */
 export function calculateIMC({ weight, height }: UserInput): number {
   if (!weight || !height) return 0;
-  return weight / (height * height);
+
+  const h = height / 100; // cm → m
+
+  return weight / (h * h);
 }
 
 /**
@@ -16,7 +19,7 @@ export function calculateBMR(data: UserInput): number {
 
   if (!weight || !height || !age) return 0;
 
-  const heightCm = height * 100;
+  const heightCm = height; // já é cm
 
   if (gender === 'male') {
     return 10 * weight + 6.25 * heightCm - 5 * age + 5;
@@ -46,19 +49,30 @@ export function calculateTDEE(data: UserInput, bmr: number): number {
  * % Gordura (estimativa)
  */
 export function calculateBodyFat(data: UserInput): number {
-  const { age, gender } = data;
+  const { gender, waist, neck, hip, height } = data;
 
-  const imc = calculateIMC(data);
+  if (!waist || !neck || !height) return 0;
 
-  if (!imc || !age) return 0;
+  const heightCm = height;
+
+  if (heightCm < 120 || waist < 60 || neck < 25) return 0;
 
   if (gender === 'male') {
-    return 1.2 * imc + 0.23 * age - 16.2;
+    const diff = waist - neck;
+
+    if (diff < 10) return 0;
+
+    const value = 86.01 * Math.log10(diff) - 70.041 * Math.log10(heightCm) + 36.76;
+
+    return isFinite(value) && value > 0 ? value : 0;
   }
 
-  return 1.2 * imc + 0.23 * age - 5.4;
-}
+  if (!hip) return 0;
 
+  const value = 163.205 * Math.log10(waist + hip - neck) - 97.684 * Math.log10(heightCm) - 78.387;
+
+  return isFinite(value) && value > 0 ? value : 0;
+}
 /**
  * Massa magra = peso × (1 - % gordura)
  */
@@ -80,8 +94,10 @@ export function calculateFatMass(weight: number, bodyFat: number): number {
 /**
  * FFMI = massa magra / altura²
  */
-export function calculateFFMI(leanMass: number, height: number): number {
-  if (!leanMass || !height) return 0;
+export function calculateFFMI(leanMass: number, heightCm: number): number {
+  if (!leanMass || !heightCm) return 0;
 
-  return leanMass / (height * height);
+  const heightM = heightCm / 100;
+
+  return leanMass / (heightM * heightM);
 }
