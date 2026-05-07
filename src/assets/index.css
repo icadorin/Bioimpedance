@@ -5,6 +5,7 @@
   --muted: #9ca3af;
   --border: #262b36;
   --accent: #6139a5;
+  --input-bg: #0f131a;
   --radius: 12px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 
@@ -12,6 +13,32 @@
     system-ui,
     -apple-system,
     sans-serif;
+}
+
+body.light {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --input-bg: #f9fafb;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+body.theme-transitioning {
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 * {
@@ -27,13 +54,15 @@ body {
 .layout {
   display: flex;
   min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .content {
   flex: 1;
-  padding: 28px;
-  will-change: auto;
-  min-width: 0;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--bg);
 }
 
 .container {
@@ -45,6 +74,7 @@ body {
 h1 {
   font-size: 32px;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 h2 {
@@ -62,7 +92,48 @@ h2 {
   padding: 18px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  margin-bottom: 24px;
+  margin: 0 auto 24px;
+  max-width: 400px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form-actions button {
+  flex: 1;
+  margin-top: 0;
+}
+
+.btn-secondary {
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+
+.btn-secondary:hover {
+  background: var(--border) !important;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.input-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 14px;
+  pointer-events: none;
 }
 
 input,
@@ -70,7 +141,7 @@ select {
   padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: #0f131a;
+  background: var(--input-bg);
   color: var(--text);
   font-size: 14px;
 }
@@ -102,6 +173,20 @@ button:hover {
   gap: 12px;
 }
 
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.results-section h2 {
+  margin-bottom: 12px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -111,6 +196,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 106px;
 }
 
 .card h3 {
@@ -125,16 +211,31 @@ button:hover {
   font-weight: 600;
 }
 
+.card--highlight {
+  border-color: var(--accent);
+  background: rgba(97, 57, 165, 0.08);
+}
+
+.unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 small {
   color: var(--muted);
   font-size: 12px;
+}
+
+input.error {
+  border-color: #ef4444;
 }
 
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px #0f131a inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
   -webkit-text-fill-color: var(--text) !important;
   caret-color: var(--text);
   transition: background-color 9999s ease-in-out 0s;
