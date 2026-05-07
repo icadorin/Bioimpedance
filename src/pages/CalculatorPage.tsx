@@ -189,248 +189,259 @@ export default function CalculatorPage() {
       <h1>Calculadora Física</h1>
 
       {/* FORM */}
-      <div className="form">
-        <h2>Dados básicos</h2>
+      <div className="calculator-layout">
+        <div className="form">
+          <h2>Dados básicos</h2>
 
-        <div className="input-wrapper">
-          <input
-            name="weight"
-            value={data.weight || ''}
-            className={errors.weight ? 'error' : ''}
-            placeholder="Peso"
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            autoComplete="off"
-            inputMode="numeric"
-            maxLength={3}
-          />
-          <span className="input-suffix">kg</span>
+          <label className="field-label">Peso</label>
+          <div className="input-wrapper">
+            <input
+              name="weight"
+              value={data.weight || ''}
+              className={errors.weight ? 'error' : ''}
+              placeholder="Peso"
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={3}
+            />
+            <span className="input-suffix">kg</span>
+          </div>
+          {errors.weight && <small style={{ color: '#ef4444' }}>{errors.weight}</small>}
+
+          <label className="field-label">Altura</label>
+          <div className="input-wrapper">
+            <input
+              name="height"
+              value={data.height || ''}
+              className={errors.height ? 'error' : ''}
+              placeholder="Altura"
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={3}
+            />
+            <span className="input-suffix">cm</span>
+          </div>
+          {errors.height && <small style={{ color: '#ef4444' }}>{errors.height}</small>}
+
+          <label className="field-label">Idade</label>
+          <div className="input-wrapper">
+            <input
+              name="age"
+              value={data.age || ''}
+              className={errors.age ? 'error' : ''}
+              placeholder="Idade"
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              inputMode="numeric"
+              maxLength={3}
+            />
+            <span className="input-suffix">anos</span>
+          </div>
+          {errors.age && <small style={{ color: '#ef4444' }}>{errors.age}</small>}
+
+          <label className="field-label">Sexo</label>
+          <select name="gender" onChange={handleChange}>
+            <option value="male">Masculino</option>
+            <option value="female">Feminino</option>
+          </select>
+
+          <h2>Nível de atividade</h2>
+
+          <select name="activityLevel" onChange={handleChange}>
+            <option value="sedentary">Sedentário</option>
+            <option value="light">Leve</option>
+            <option value="moderate">Moderado</option>
+            <option value="active">Ativo</option>
+            <option value="very_active">Muito ativo</option>
+          </select>
+
+          <h2>Objetivo</h2>
+
+          <select name="objective" onChange={handleChange}>
+            <option value="maintenance">Manutenção</option>
+            <option value="cutting">Cutting</option>
+            <option value="bulking">Bulking</option>
+          </select>
+
+          <h2>Medidas corporais</h2>
+
+          <label className="field-label">Cintura</label>
+          <div className="input-wrapper">
+            <input
+              name="waist"
+              value={inputValues.waist}
+              maxLength={5}
+              className={errors.waist ? 'error' : ''}
+              placeholder="Cintura (cm) ex: 85.5"
+              onChange={handleChange}
+              autoComplete="off"
+              inputMode="decimal"
+            />
+            <span className="input-suffix">cm</span>
+          </div>
+          {errors.waist && <small style={{ color: '#ef4444' }}>{errors.waist}</small>}
+
+          <label className="field-label">Pescoço</label>
+          <div className="input-wrapper">
+            <input
+              name="neck"
+              value={inputValues.neck}
+              maxLength={5}
+              className={errors.neck ? 'error' : ''}
+              placeholder="Pescoço (cm) ex: 37.5"
+              onChange={handleChange}
+              autoComplete="off"
+              inputMode="decimal"
+            />
+            <span className="input-suffix">cm</span>
+          </div>
+          {errors.neck && <small style={{ color: '#ef4444' }}>{errors.neck}</small>}
+
+          {data.gender === 'female' && (
+            <>
+              <label className="field-label">Quadril</label>
+              <div className="input-wrapper">
+                <input
+                  name="hip"
+                  value={inputValues.hip}
+                  maxLength={5}
+                  className={errors.hip ? 'error' : ''}
+                  placeholder="Quadril (cm) ex: 95.5"
+                  onChange={handleChange}
+                  autoComplete="off"
+                  inputMode="decimal"
+                />
+                <span className="input-suffix">cm</span>
+              </div>
+              {errors.hip && <small style={{ color: '#ef4444' }}>{errors.hip}</small>}
+            </>
+          )}
+
+          <div className="form-actions">
+            <button onClick={handleCalculate}>Calcular</button>
+            <button className="btn-secondary" onClick={handleReset}>
+              Resetar
+            </button>
+          </div>
         </div>
-        {errors.weight && <small style={{ color: '#ef4444' }}>{errors.weight}</small>}
 
-        <div className="input-wrapper">
-          <input
-            name="height"
-            value={data.height || ''}
-            className={errors.height ? 'error' : ''}
-            placeholder="Altura"
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            autoComplete="off"
-            inputMode="numeric"
-            maxLength={3}
-          />
-          <span className="input-suffix">cm</span>
-        </div>
-        {errors.height && <small style={{ color: '#ef4444' }}>{errors.height}</small>}
-
-        <div className="input-wrapper">
-          <input
-            name="age"
-            value={data.age || ''}
-            className={errors.age ? 'error' : ''}
-            placeholder="Idade"
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            autoComplete="off"
-            inputMode="numeric"
-            maxLength={3}
-          />
-          <span className="input-suffix">anos</span>
-        </div>
-        {errors.age && <small style={{ color: '#ef4444' }}>{errors.age}</small>}
-
-        <select name="gender" onChange={handleChange}>
-          <option value="male">Masculino</option>
-          <option value="female">Feminino</option>
-        </select>
-
-        <h2>Nível de atividade</h2>
-
-        <select name="activityLevel" onChange={handleChange}>
-          <option value="sedentary">Sedentário</option>
-          <option value="light">Leve</option>
-          <option value="moderate">Moderado</option>
-          <option value="active">Ativo</option>
-          <option value="very_active">Muito ativo</option>
-        </select>
-
-        <h2>Objetivo</h2>
-
-        <select name="objective" onChange={handleChange}>
-          <option value="maintenance">Manutenção</option>
-          <option value="cutting">Cutting</option>
-          <option value="bulking">Bulking</option>
-        </select>
-
-        <h2>Medidas corporais</h2>
-
-        <div className="input-wrapper">
-          <input
-            name="waist"
-            type="text"
-            inputMode="decimal"
-            value={inputValues.waist}
-            maxLength={5}
-            placeholder="Cintura (cm) ex: 85.5"
-            onChange={handleChange}
-            autoComplete="off"
-          />
-          <span className="input-suffix">cm</span>
-        </div>
-        {errors.waist && <small style={{ color: '#ef4444' }}>{errors.waist}</small>}
-
-        <div className="input-wrapper">
-          <input
-            name="neck"
-            value={inputValues.neck}
-            maxLength={5}
-            className={errors.neck ? 'error' : ''}
-            placeholder="Pescoço (cm) ex: 37.5"
-            onChange={handleChange}
-            autoComplete="off"
-            inputMode="decimal"
-          />
-          <span className="input-suffix">cm</span>
-        </div>
-        {errors.neck && <small style={{ color: '#ef4444' }}>{errors.neck}</small>}
-
-        {data.gender === 'female' && (
-          <>
-            <div className="input-wrapper">
-              <input
-                name="hip"
-                value={inputValues.hip}
-                maxLength={5}
-                className={errors.hip ? 'error' : ''}
-                placeholder="Quadril (cm) ex: 95.5"
-                onChange={handleChange}
-                autoComplete="off"
-                inputMode="decimal"
-              />
-              <span className="input-suffix">cm</span>
+        {/* RESULTADOS */}
+        {
+          <div className="results">
+            <div className="results-section">
+              <h2>Composição corporal</h2>
+              <div className="dashboard">
+                <div className="card card--highlight">
+                  <h3>% Gordura</h3>
+                  <div className="value">
+                    {result?.bodyFat ? `${result.bodyFat.toFixed(1)}%` : '—'}
+                  </div>
+                  {(result?.bodyFat ?? 0) > 0 && <small>{result?.bodyFatLevel}</small>}
+                </div>
+                <div className="card">
+                  <h3>IMC</h3>
+                  <div className="value">{result?.imc?.toFixed(1) ?? '—'}</div>
+                </div>
+                <div className="card">
+                  <h3>FFMI</h3>
+                  <div className="value">{result?.ffmi ? result.ffmi.toFixed(1) : '—'}</div>
+                </div>
+                <div className="card">
+                  <h3>Massa magra</h3>
+                  <div className="value">
+                    {result?.leanMass ? (
+                      <>
+                        {result.leanMass.toFixed(1)}
+                        <span className="unit"> kg</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+                <div className="card">
+                  <h3>Massa gorda</h3>
+                  <div className="value">
+                    {result?.fatMass ? (
+                      <>
+                        {result.fatMass.toFixed(1)}
+                        <span className="unit"> kg</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-            {errors.hip && <small style={{ color: '#ef4444' }}>{errors.hip}</small>}
-          </>
-        )}
 
-        <div className="form-actions">
-          <button onClick={handleCalculate}>Calcular</button>
-          <button className="btn-secondary" onClick={handleReset}>
-            Resetar
-          </button>
-        </div>
+            <div className="results-section">
+              <h2>Energia e nutrição</h2>
+              <div className="dashboard">
+                <div className="card card--highlight">
+                  <h3>Calorias alvo</h3>
+                  <div className="value">
+                    {result?.targetCalories ? (
+                      <>
+                        {result.targetCalories.toLocaleString('pt-BR', {
+                          maximumFractionDigits: 0,
+                        })}
+                        <span className="unit"> kcal</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+                <div className="card">
+                  <h3>TMB</h3>
+                  <div className="value">
+                    {result?.bmr ? (
+                      <>
+                        {result.bmr.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                        <span className="unit"> kcal</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+                <div className="card">
+                  <h3>TDEE</h3>
+                  <div className="value">
+                    {result?.tdee ? (
+                      <>
+                        {result.tdee.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                        <span className="unit"> kcal</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+                <div className="card">
+                  <h3>Proteína</h3>
+                  <div className="value">
+                    {result?.protein ? (
+                      <>
+                        {result.protein.toFixed(0)}
+                        <span className="unit"> g</span>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
       </div>
-
-      {/* RESULTADOS */}
-      {
-        <div className="results">
-          <div className="results-section">
-            <h2>Composição corporal</h2>
-            <div className="dashboard">
-              <div className="card card--highlight">
-                <h3>% Gordura</h3>
-                <div className="value">
-                  {result?.bodyFat ? `${result.bodyFat.toFixed(1)}%` : '—'}
-                </div>
-                {(result?.bodyFat ?? 0) > 0 && <small>{result?.bodyFatLevel}</small>}
-              </div>
-              <div className="card">
-                <h3>IMC</h3>
-                <div className="value">{result?.imc?.toFixed(1) ?? '—'}</div>
-              </div>
-              <div className="card">
-                <h3>FFMI</h3>
-                <div className="value">{result?.ffmi ? result.ffmi.toFixed(1) : '—'}</div>
-              </div>
-              <div className="card">
-                <h3>Massa magra</h3>
-                <div className="value">
-                  {result?.leanMass ? (
-                    <>
-                      {result.leanMass.toFixed(1)}
-                      <span className="unit"> kg</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-              <div className="card">
-                <h3>Massa gorda</h3>
-                <div className="value">
-                  {result?.fatMass ? (
-                    <>
-                      {result.fatMass.toFixed(1)}
-                      <span className="unit"> kg</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="results-section">
-            <h2>Energia e nutrição</h2>
-            <div className="dashboard">
-              <div className="card card--highlight">
-                <h3>Calorias alvo</h3>
-                <div className="value">
-                  {result?.targetCalories ? (
-                    <>
-                      {result.targetCalories.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-                      <span className="unit"> kcal</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-              <div className="card">
-                <h3>TMB</h3>
-                <div className="value">
-                  {result?.bmr ? (
-                    <>
-                      {result.bmr.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-                      <span className="unit"> kcal</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-              <div className="card">
-                <h3>TDEE</h3>
-                <div className="value">
-                  {result?.tdee ? (
-                    <>
-                      {result.tdee.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-                      <span className="unit"> kcal</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-              <div className="card">
-                <h3>Proteína</h3>
-                <div className="value">
-                  {result?.protein ? (
-                    <>
-                      {result.protein.toFixed(0)}
-                      <span className="unit"> g</span>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
     </div>
   );
 }
