@@ -1,11 +1,12 @@
 :root {
-  --bg: #ffffff;
-  --text: #1f2937;
-  --border: #e5e7eb;
-  --accent: #7c3aed;
-
-  --radius: 8px;
-  --shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  --bg: #0f1115;
+  --panel: #161a22;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #262b36;
+  --accent: #6139a5;
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 
   font-family:
     system-ui,
@@ -23,10 +24,22 @@ body {
   color: var(--text);
 }
 
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 28px;
+  will-change: auto;
+  min-width: 0;
+}
+
 .container {
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 28px;
 }
 
 h1 {
@@ -35,23 +48,31 @@ h1 {
 }
 
 h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
+  font-size: 16px;
+  margin: 12px 0 4px;
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .form {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: var(--panel);
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
 }
 
 input,
-select,
-button {
-  padding: 10px;
+select {
+  padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  font-size: 16px;
+  background: #0f131a;
+  color: var(--text);
+  font-size: 14px;
 }
 
 input:focus,
@@ -61,21 +82,70 @@ select:focus {
 }
 
 button {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: none;
   background: var(--accent);
   color: white;
-  border: none;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 button:hover {
   opacity: 0.9;
 }
 
-.result {
-  margin-top: 20px;
-  padding: 16px;
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  padding: 14px;
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card h3 {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.card .value {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #0f131a inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .content {
+    padding: 20px;
+  }
 }

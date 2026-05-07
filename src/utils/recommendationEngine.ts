@@ -15,7 +15,7 @@ export function generateRecommendation(data: UserInput, tdee: number, bodyFat: n
   const notes: string[] = [];
 
   /**
-   * 🥗 DIETA BASEADA NO OBJETIVO
+   *  DIETA BASEADA NO OBJETIVO
    */
   if (objective === 'cutting') {
     calories = tdee * 0.85; // déficit calórico leve
@@ -36,7 +36,7 @@ export function generateRecommendation(data: UserInput, tdee: number, bodyFat: n
   }
 
   /**
-   * 🏋️ TREINO BASEADO NO % DE GORDURA
+   *  TREINO BASEADO NO % DE GORDURA
    */
   if (bodyFat > 25) {
     trainingType = 'Treino metabólico + força leve';
@@ -52,7 +52,7 @@ export function generateRecommendation(data: UserInput, tdee: number, bodyFat: n
   }
 
   /**
-   * ⚠️ ALERTAS INTELIGENTES
+   *  ALERTAS INTELIGENTES
    */
   if (bodyFat > 30) {
     notes.push('Percentual de gordura elevado');

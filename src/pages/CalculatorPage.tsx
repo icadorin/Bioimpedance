@@ -23,10 +23,8 @@ export default function CalculatorPage() {
     height: 0,
     age: 0,
     gender: 'male',
-
     activityLevel: 'sedentary',
     objective: 'maintenance',
-
     waist: 0,
     neck: 0,
     hip: 0,
@@ -36,7 +34,7 @@ export default function CalculatorPage() {
 
   const numericKeys: (keyof UserInput)[] = ['weight', 'height', 'age', 'waist', 'neck', 'hip'];
 
-  function isNumericKey(key: keyof UserInput): boolean {
+  function isNumericKey(key: keyof UserInput) {
     return numericKeys.includes(key);
   }
 
@@ -55,7 +53,6 @@ export default function CalculatorPage() {
     const parsed = userSchema.safeParse(data);
 
     if (!parsed.success) {
-      console.log(parsed.error.format());
       alert('Preencha os campos corretamente antes de calcular');
       return;
     }
@@ -88,7 +85,6 @@ export default function CalculatorPage() {
       protein: recommendation.protein,
       cardio: recommendation.cardio,
       notes: recommendation.notes,
-
       trainingType: recommendation.trainingType,
     });
   }
@@ -97,6 +93,7 @@ export default function CalculatorPage() {
     <div className="container">
       <h1>Calculadora Física</h1>
 
+      {/* FORM */}
       <div className="form">
         <h2>Dados básicos</h2>
 
@@ -112,19 +109,19 @@ export default function CalculatorPage() {
         <h2>Nível de atividade</h2>
 
         <select name="activityLevel" onChange={handleChange}>
-          <option value="sedentary">Sedentário (não treina)</option>
-          <option value="light">Leve (1–3x por semana)</option>
-          <option value="moderate">Moderado (3–5x por semana)</option>
-          <option value="active">Ativo (quase todo dia)</option>
+          <option value="sedentary">Sedentário</option>
+          <option value="light">Leve</option>
+          <option value="moderate">Moderado</option>
+          <option value="active">Ativo</option>
           <option value="very_active">Muito ativo</option>
         </select>
 
         <h2>Objetivo</h2>
 
         <select name="objective" onChange={handleChange}>
-          <option value="cutting">Cutting (perder gordura)</option>
           <option value="maintenance">Manutenção</option>
-          <option value="bulking">Bulking (ganhar massa)</option>
+          <option value="cutting">Cutting</option>
+          <option value="bulking">Bulking</option>
         </select>
 
         <h2>Medidas corporais</h2>
@@ -139,54 +136,55 @@ export default function CalculatorPage() {
         <button onClick={handleCalculate}>Calcular</button>
       </div>
 
+      {/* RESULTADOS */}
       {result && (
         <div className="dashboard">
           <div className="card">
             <h3>IMC</h3>
-            <div>{result.imc.toFixed(2)}</div>
+            <div className="value">{result.imc?.toFixed(2)}</div>
           </div>
 
           <div className="card">
             <h3>FFMI</h3>
-            <div>{result.ffmi.toFixed(2)}</div>
+            <div className="value">{result.ffmi ? result.ffmi.toFixed(2) : '—'}</div>
           </div>
 
           <div className="card">
             <h3>% Gordura</h3>
-
-            <div>{result.bodyFat > 0 ? `${result.bodyFat.toFixed(2)}%` : 'Sem dados'}</div>
-
+            <div className="value">
+              {result.bodyFat ? `${result.bodyFat.toFixed(2)}%` : 'Sem dados'}
+            </div>
             {result.bodyFat > 0 && <small>{result.bodyFatLevel}</small>}
           </div>
 
           <div className="card">
             <h3>TMB</h3>
-            <div>{result.bmr.toFixed(0)} kcal</div>
+            <div className="value">{result.bmr?.toFixed(0)} kcal</div>
           </div>
 
           <div className="card">
             <h3>TDEE</h3>
-            <div>{result.tdee.toFixed(0)} kcal</div>
+            <div className="value">{result.tdee?.toFixed(0)} kcal</div>
           </div>
 
           <div className="card">
             <h3>Calorias alvo</h3>
-            <div>{result.targetCalories.toFixed(0)} kcal</div>
+            <div className="value">{result.targetCalories?.toFixed(0)} kcal</div>
           </div>
 
           <div className="card">
             <h3>Proteína</h3>
-            <div>{result.protein.toFixed(0)} g</div>
+            <div className="value">{result.protein?.toFixed(0)} g</div>
           </div>
 
           <div className="card">
             <h3>Massa magra</h3>
-            <div>{result.leanMass.toFixed(1)} kg</div>
+            <div className="value">{result.leanMass?.toFixed(1)} kg</div>
           </div>
 
           <div className="card">
             <h3>Massa gorda</h3>
-            <div>{result.fatMass.toFixed(1)} kg</div>
+            <div className="value">{result.fatMass?.toFixed(1)} kg</div>
           </div>
         </div>
       )}

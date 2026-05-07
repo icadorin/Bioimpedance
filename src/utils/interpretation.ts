@@ -1,7 +1,7 @@
 import type { Gender } from '../types';
 
 /**
- * 🧠 Interpretação do % de gordura corporal
+ * Interpretação do % de gordura corporal
  */
 export function interpretBodyFat(gender: Gender, bodyFat: number): string {
   if (bodyFat <= 0) return 'Sem dados';
