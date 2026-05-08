@@ -1,0 +1,17 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "students": "Students",
+    "newAssessment": "New Assessment",
+    "history": "History",
+    "pdfs": "PDFs",
+    "settings": "Settings",
+    "lightTheme": "Light Theme",
+    "darkTheme": "Dark Theme"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "language": "Language"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "students": "Alunos",
+    "newAssessment": "Nova avaliação",
+    "history": "Histórico",
+    "pdfs": "PDFs",
+    "settings": "Configurações",
+    "lightTheme": "Tema claro",
+    "darkTheme": "Tema escuro"
+  },
+
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma"
+  }
+}

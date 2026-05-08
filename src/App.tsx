@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
-import CalculatorPage from './pages/CalculatorPage';
+import NewAssessment from './pages/NewAssessment';
+import Settings from './pages/Settings';
 
 export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -32,7 +33,8 @@ export default function App() {
         <Sidebar theme={theme} onToggleTheme={toggleTheme} />
         <main className="content">
           <Routes>
-            <Route path="/" element={<CalculatorPage />} />
+            <Route path="/" element={<NewAssessment />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
       </div>

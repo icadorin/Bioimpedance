@@ -1,0 +1,61 @@
+.settings-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 500px;
+}
+
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.language-options {
+  display: flex;
+  gap: 8px;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius) !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent) !important;
+  color: var(--text) !important;
+  opacity: 1 !important;
+}
+
+.lang-btn.active {
+  border-color: var(--accent) !important;
+  background: rgba(97, 57, 165, 0.12) !important;
+  color: var(--text) !important;
+}
