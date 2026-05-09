@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { userSchema } from '../validation/userSchema';
 import type { UserInput } from '../types';
 import type { PhysicResult, RecommendationResult } from '../types/result.types';
-
 import { interpretBodyFat } from '../utils/interpretation';
 import { generateRecommendation } from '../utils/recommendationEngine';
 import {
@@ -14,12 +13,13 @@ import {
   calculateFatMass,
   calculateFFMI,
 } from '../utils/calculations';
+import '../styles/newAssessment.css';
 
 type Result = PhysicResult & RecommendationResult;
 
 const STORAGE_KEY = 'calculator-data';
 
-export default function CalculatorPage() {
+export default function NewAssessment() {
   function getSavedData() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);

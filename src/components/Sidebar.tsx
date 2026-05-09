@@ -10,11 +10,10 @@ import {
   FileText,
   Settings,
 } from 'lucide-react';
-
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import '../assets/sidebar.css';
+import '../styles/sidebar.css';
 
 interface SidebarProps {
   theme: 'dark' | 'light';
@@ -26,43 +25,46 @@ export function Sidebar({ theme, onToggleTheme }: SidebarProps) {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
 
+  const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const navigate = useNavigate();
   const location = useLocation();
-
   const { t } = useTranslation();
 
   function handleCollapse() {
     const next = !collapsed;
-
     setCollapsed(next);
-
     localStorage.setItem('sidebarCollapsed', String(next));
   }
+
+  const handleMouseEnter = () => {
+    if (!isMobile) setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (!isMobile) setIsHovered(false);
+  };
 
   useEffect(() => {
     function handleResize() {
       setIsMobile(window.innerWidth < 768);
     }
-
     window.addEventListener('resize', handleResize);
-
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   function handleNavigate(path: string) {
     navigate(path);
-
-    if (isMobile) {
-      setMobileOpen(false);
-    }
+    if (isMobile) setMobileOpen(false);
   }
 
   function isActive(path: string) {
     return location.pathname === path;
   }
+
+  const isCollapsed = !isMobile && collapsed && !isHovered;
 
   return (
     <>
@@ -75,11 +77,9 @@ export function Sidebar({ theme, onToggleTheme }: SidebarProps) {
       {isMobile && mobileOpen && <div className="overlay" onClick={() => setMobileOpen(false)} />}
 
       <aside
-        className={`
-          sidebar
-          ${!isMobile && collapsed ? 'collapsed' : ''}
-          ${mobileOpen ? 'open' : ''}
-        `}
+        className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'open' : ''}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <div className="sidebar-logo">
           <img src="/favicon/apple-touch-icon.png" alt="Logo" width={36} height={36} />
@@ -144,7 +144,6 @@ export function Sidebar({ theme, onToggleTheme }: SidebarProps) {
         <div className="sidebar-footer">
           <div className="item" onClick={onToggleTheme}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-
             <span>{theme === 'dark' ? t('sidebar.lightTheme') : t('sidebar.darkTheme')}</span>
           </div>
         </div>

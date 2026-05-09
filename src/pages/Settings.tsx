@@ -1,6 +1,6 @@
 import { Globe, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import '../assets/settings.css';
+import '../styles/settings.css';
 
 export default function Settings() {
   const { t, i18n } = useTranslation();

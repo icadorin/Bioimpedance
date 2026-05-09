@@ -1,3 +1,14 @@
+export interface MethodDetailItem {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+export interface MethodDetails {
+  title: string;
+  items: MethodDetailItem[];
+}
+
 export interface PhysicResult {
   imc: number;
   bmr: number;
@@ -7,6 +18,7 @@ export interface PhysicResult {
   fatMass: number;
   ffmi: number;
   bodyFatLevel: string;
+  methodDetails?: MethodDetails;
 }
 
 export interface RecommendationResult {
