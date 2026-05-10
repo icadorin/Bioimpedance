@@ -42,7 +42,7 @@ nav {
 
 .sidebar .item span {
   display: inline-block;
-  line-height: 1;
+  line-height: 1.2;
   transition:
     opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -147,6 +147,34 @@ nav {
   z-index: 90;
   opacity: 0;
   animation: fadeIn 0.3s ease forwards;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.developed-by {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.2s ease 0.3s;
+}
+
+.developed-by strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.sidebar.collapsed .developed-by {
+  opacity: 0;
+  transition: opacity 0.1s ease;
 }
 
 @keyframes fadeIn {

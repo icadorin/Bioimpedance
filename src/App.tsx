@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
+
+import { Sidebar } from './components/layout/Sidebar';
 import NewAssessment from './features/assessment/pages/NewAssessment';
 import Settings from './pages/Settings';
 
@@ -17,11 +18,9 @@ export default function App() {
     const next = theme === 'dark' ? 'light' : 'dark';
 
     setTheme(next);
-
     localStorage.setItem('theme', next);
 
     document.body.classList.add('theme-transitioning');
-
     document.body.className =
       next === 'light' ? 'light theme-transitioning' : 'theme-transitioning';
 
@@ -33,13 +32,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="layout">
-        <Sidebar theme={theme} onToggleTheme={toggleTheme} />
-
+        <Sidebar />
         <main className="content">
           <Routes>
             <Route path="/" element={<NewAssessment />} />
-
-            <Route path="/settings" element={<Settings />} />
+            <Route
+              path="/settings"
+              element={<Settings theme={theme} onToggleTheme={toggleTheme} />}
+            />
           </Routes>
         </main>
       </div>

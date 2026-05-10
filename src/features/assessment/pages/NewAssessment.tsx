@@ -1,22 +1,56 @@
 import { useEffect, useState } from 'react';
-import { userSchema } from '../../../validation/userSchema';
-import type { UserInput } from '../../../types';
-import type { InputValues } from '../../../types/input.types';
-import type { PhysicResult, RecommendationResult } from '../../../types/result.types';
-import type { AssessmentMethod } from '../../../types/assessment.types';
-import type { BioimpedanceInput, BioimpedanceInputValues } from '../../../types/bioimpedance.types';
-import { interpretBodyFat, classifyIMC } from '../../../utils/interpretation';
-import { generateRecommendation } from '../../../utils/recommendationEngine';
-import { STORAGE_KEY } from '../../../config/storage';
-import { InputField } from '../../../components/InputField';
-import { methodOptions } from '../../../config/selectOptions';
+
+// Tipagens
+import type { AssessmentMethod } from '../types';
+import type { NavyAssessmentInput } from '../types/assessment-input.types';
+import type { BioimpedanceInput } from '../types/bioimpedance.types';
+import type { SkinfoldInput } from '../types/skinfold.types';
+
+import type { NavyInputValues } from '../types/input-values.types';
+import type { BioimpedanceInputValues } from '../types/bioimpedance.types';
+import type { SkinfoldInputValues } from '../types/skinfold.types';
+import type { SkinfoldMeasurementKey } from '../types/skinfold.types';
+import type { RangeRule } from '../constants/rangeRules';
+
+import type { PhysicResult, RecommendationResult } from '../types/assessment-result.types';
+
+// Componentes
+import NavyCalculator from '../components/calculators/NavyCalculator';
+import BioimpedanceCalculator from '../components/calculators/BioimpedanceCalculator';
+import SkinfoldCalculator from '../components/calculators/SkinfoldCalculator';
+import ImcCalculator from '../components/calculators/ImcCalculator';
+import ResultCards from '../../../components/shared/ResultCards';
+import { InputField } from '../../../components/shared/InputField';
+
+// Configs
+import { methodOptions } from '../config/selectOptions';
+import { STORAGE_KEY } from '../config/storage';
+
+import {
+  initialNavyData,
+  initialNavyInputValues,
+  initialBioData,
+  initialBioInputValues,
+  initialSkinfoldData,
+  initialSkinfoldInputValues,
+} from '../config/initialStates';
+
+import {
+  navyNumericKeys,
+  navyDecimalKeys,
+  bioNumericKeys,
+  bioDecimalKeys,
+  skinfoldNumericKeys,
+  skinfoldDecimalKeys,
+} from '../config/numericFields';
+
+import { BIO_RANGE_RULES, SKINFOLD_RANGE_RULES } from '../constants/rangeRules';
+import { EMPTY_MESSAGES, INVALID_MESSAGES } from '../constants/validationMessages';
+import { userSchema } from '../validation/userSchema';
+
+// Utils
 import { parseNumericInput } from '../../../utils/parseNumericInput';
-import { EMPTY_MESSAGES, INVALID_MESSAGES } from '../../../constants/validationMessages';
-import type {
-  SkinfoldInput,
-  SkinfoldInputValues,
-  SkinfoldMeasurementKey,
-} from '../../../types/skinfold.types';
+
 import {
   calculateIMC,
   calculateBMR,
@@ -25,53 +59,32 @@ import {
   calculateLeanMass,
   calculateFatMass,
   calculateFFMI,
-} from '../../../utils/calculations';
+} from '../utils/calculations';
+
 import {
   calculateBioImpedance,
   calculateBodyFatBio,
   calculatePhaseAngle,
   calculateTBW,
-} from '../../../utils/bioimpedance/calculations';
+} from '../utils/calculationsBio';
+
 import {
   calculateBodyFatSkinfold,
   calculateSkinfoldDensity,
   calculateSkinfoldSum,
   getRequiredSkinfoldFields,
-} from '../../../utils/skinfold/calculations';
-import {
-  initialNavyData,
-  initialNavyInputValues,
-  initialBioData,
-  initialBioInputValues,
-  initialSkinfoldData,
-  initialSkinfoldInputValues,
-} from '../../../config/initialStates';
-import {
-  navyNumericKeys,
-  navyDecimalKeys,
-  bioNumericKeys,
-  bioDecimalKeys,
-  skinfoldNumericKeys,
-  skinfoldDecimalKeys,
-} from '../../../config/numericFields';
-import {
-  BIO_RANGE_RULES,
-  SKINFOLD_RANGE_RULES,
-  type RangeRule,
-} from '../../../constants/rangeRules';
-import NavyCalculator from '../../../components/calculators/NavyCalculator';
-import BioimpedanceCalculator from '../../../components/calculators/BioimpedanceCalculator';
-import SkinfoldCalculator from '../../../components/calculators/SkinfoldCalculator';
-import ImcCalculator from '../../../components/calculators/ImcCalculator';
-import ResultCards from '../../../components/ResultCards';
+} from '../utils/calculationsSkin';
 
-import '../../../styles/newAssessment.css';
+import { interpretBodyFat, classifyIMC } from '../utils/interpretation';
+import { generateRecommendation } from '../utils/recommendationEngine';
+
+import '../styles/newAssessment.css';
 
 type Result = PhysicResult & RecommendationResult;
 
 type SavedCalculatorData = {
-  data?: UserInput;
-  inputValues?: InputValues;
+  data?: NavyAssessmentInput;
+  inputValues?: NavyInputValues;
   bioData?: BioimpedanceInput;
   bioInputValues?: BioimpedanceInputValues;
   skinfoldData?: SkinfoldInput;
@@ -102,14 +115,14 @@ export default function NewAssessment() {
   // ── método ──────────────────────────────────────────────
   const [method, setMethod] = useState<AssessmentMethod>('navy');
 
-  // ── navy ─────────────────────────────────────────────────
-  const [data, setData] = useState<UserInput>(savedData?.data || initialNavyData);
+  // ── Navy / IMC ─────────────────────────────────────
+  const [data, setData] = useState<NavyAssessmentInput>(savedData?.data || initialNavyData);
 
-  const [inputValues, setInputValues] = useState<InputValues>(
+  const [inputValues, setInputValues] = useState<NavyInputValues>(
     savedData?.inputValues || initialNavyInputValues
   );
 
-  const [errors, setErrors] = useState<Partial<Record<keyof UserInput, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof NavyAssessmentInput, string>>>({});
 
   // ── bioimpedância ─────────────────────────────────────────
   const [bioData, setBioData] = useState<BioimpedanceInput>(savedData?.bioData || initialBioData);
@@ -164,13 +177,14 @@ export default function NewAssessment() {
 
   function handleNavyChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
-    const key = name as keyof UserInput;
+    const key = name as keyof NavyAssessmentInput;
 
     setErrors((prev) => ({ ...prev, [key]: undefined }));
 
-    if (navyNumericKeys.includes(key)) {
-      const parsed = parseNumericInput(value, navyDecimalKeys.includes(key));
+    if (navyNumericKeys.includes(key as any)) {
+      const parsed = parseNumericInput(value, navyDecimalKeys.includes(key as any));
       if (!parsed) return;
+
       setInputValues((prev) => ({ ...prev, [key]: value }));
       setData((prev) => ({ ...prev, [key]: parsed.numericValue }));
     } else {
@@ -179,29 +193,30 @@ export default function NewAssessment() {
         setInputValues((prev) => ({ ...prev, hip: '' }));
         setErrors((prev) => ({ ...prev, hip: undefined }));
       } else {
-        setData((prev) => ({ ...prev, [key]: value }));
+        setData((prev) => ({ ...prev, [key]: value as any }));
       }
     }
   }
 
-  function friendlyMessage(field: keyof UserInput, value: number): string {
+  function friendlyMessage(field: keyof NavyAssessmentInput, value: number): string {
     if (value === 0) {
-      return EMPTY_MESSAGES[field] ?? 'Campo obrigatório';
+      return EMPTY_MESSAGES[field as keyof typeof EMPTY_MESSAGES] ?? 'Campo obrigatório';
     }
-
-    return INVALID_MESSAGES[field] ?? 'Valor inválido';
+    return INVALID_MESSAGES[field as keyof typeof INVALID_MESSAGES] ?? 'Valor inválido';
   }
 
   function handleCalculate() {
     const parsed = userSchema.safeParse(data);
 
     if (!parsed.success) {
-      const fieldErrors: Partial<Record<keyof UserInput, string>> = {};
+      const fieldErrors: Partial<Record<keyof NavyAssessmentInput, string>> = {};
+
       parsed.error.issues.forEach((err) => {
-        const field = err.path[0] as keyof UserInput;
+        const field = err.path[0] as keyof NavyAssessmentInput;
         const value = typeof data[field] === 'number' ? (data[field] as number) : 0;
         fieldErrors[field] = friendlyMessage(field, value);
       });
+
       setErrors(fieldErrors);
       return;
     }
@@ -380,9 +395,9 @@ export default function NewAssessment() {
     const key = name as keyof SkinfoldInput;
 
     if (key === 'protocol' || key === 'gender') {
-      // descobre quais campos vão sumir com o novo valor
       const nextData = { ...skinfoldData, [key]: value };
       const nextFields = getRequiredSkinfoldFields(nextData);
+
       const allMeasurementKeys: SkinfoldMeasurementKey[] = [
         'biceps',
         'chest',
@@ -393,45 +408,51 @@ export default function NewAssessment() {
         'suprailiac',
         'thigh',
       ];
+
       const removedFields = allMeasurementKeys.filter((f) => !nextFields.includes(f));
 
-      // reseta dados e erros dos campos removidos
       setSkinfoldData((prev) => {
-        const updated = { ...prev, [key]: value };
-        removedFields.forEach((f) => {
-          (updated as Record<SkinfoldMeasurementKey, number>)[f] = 0;
+        const updated: SkinfoldInput = { ...prev, [key]: value };
+
+        removedFields.forEach((field) => {
+          updated[field] = 0;
         });
+
         return updated;
       });
+
       setSkinfoldInputValues((prev) => {
         const updated = { ...prev };
-        removedFields.forEach((f) => {
-          (updated as Record<SkinfoldMeasurementKey, string>)[f] = '';
+        removedFields.forEach((field) => {
+          updated[field] = '';
         });
         return updated;
       });
+
       setSkinfoldErrors((prev) => {
         const updated = { ...prev };
-        removedFields.forEach((f) => {
-          delete updated[f];
+        removedFields.forEach((field) => {
+          delete updated[field];
         });
         return updated;
       });
+
       return;
     }
 
+    // === Campos numéricos normais ===
     setSkinfoldErrors((prev) => ({ ...prev, [key]: undefined }));
 
-    if (skinfoldNumericKeys.includes(key)) {
-      const parsed = parseNumericInput(value, skinfoldDecimalKeys.includes(key));
+    if (skinfoldNumericKeys.includes(key as any)) {
+      const parsed = parseNumericInput(value, skinfoldDecimalKeys.includes(key as any));
       if (!parsed) return;
-      setSkinfoldInputValues((prev) => ({ ...prev, [key as keyof SkinfoldInputValues]: value }));
+
+      setSkinfoldInputValues((prev) => ({ ...prev, [key]: value }));
       setSkinfoldData((prev) => ({ ...prev, [key]: parsed.numericValue }));
     } else {
-      setSkinfoldData((prev) => ({ ...prev, [key]: value }));
+      setSkinfoldData((prev) => ({ ...prev, [key]: value as any }));
     }
   }
-
   function handleSkinfoldCalculate() {
     const { weight, height } = skinfoldData;
     const newErrors: Partial<Record<keyof SkinfoldInput, string>> = {};
@@ -457,7 +478,7 @@ export default function NewAssessment() {
 
     setSkinfoldErrors({});
 
-    const skinfoldAsUserInput: UserInput = {
+    const skinfoldAsUserInput: NavyAssessmentInput = {
       weight: skinfoldData.weight,
       height: skinfoldData.height,
       age: skinfoldData.age,
@@ -541,7 +562,7 @@ export default function NewAssessment() {
   }
 
   function handleImcCalculate() {
-    const newErrors: Partial<Record<keyof UserInput, string>> = {};
+    const newErrors: Partial<Record<keyof NavyAssessmentInput, string>> = {};
 
     if (!data.weight || data.weight < 20 || data.weight > 300) {
       newErrors.weight = data.weight === 0 ? 'Informe seu peso' : 'Peso deve ser entre 20 e 300 kg';
