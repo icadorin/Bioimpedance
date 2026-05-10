@@ -35,6 +35,9 @@ export function generateRecommendation(data: NavyAssessmentInput, tdee: number, 
     notes.push('Manutenção calórica');
   }
 
+  const fat = Math.round((calories * 0.25) / 9);
+  const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
+
   /**
    *  TREINO BASEADO NO % DE GORDURA
    */
@@ -65,6 +68,8 @@ export function generateRecommendation(data: NavyAssessmentInput, tdee: number, 
   return {
     calories: Math.round(calories),
     protein: Math.round(protein),
+    carbs,
+    fat,
     trainingType,
     cardio,
     notes,

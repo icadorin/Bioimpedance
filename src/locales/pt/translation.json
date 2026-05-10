@@ -12,6 +12,7 @@
 
   "settings": {
     "title": "Configurações",
-    "language": "Idioma"
+    "language": "Idioma",
+    "theme": "Tema"
   }
 }

@@ -69,14 +69,24 @@ export const DEFAULT_METHOD_DETAILS: Record<AssessmentMethod, MethodDetails> = {
     title: 'Detalhes do IMC',
     items: [
       {
+        label: 'IMC',
+        value: '--',
+        description: 'Índice de Massa Corporal (peso / altura²)',
+      },
+      {
         label: 'Classificação',
         value: '--',
-        description: 'Faixa do IMC calculado',
+        description: 'Baseado nos critérios da OMS',
       },
       {
         label: 'Faixa saudável',
-        value: '--',
-        description: 'Intervalo considerado saudável',
+        value: '18.5 – 24.9',
+        description: 'Intervalo considerado saudável pela OMS',
+      },
+      {
+        label: 'Limitação',
+        value: 'Atenção',
+        description: 'Não diferencia massa magra de gordura corporal',
       },
     ],
   },

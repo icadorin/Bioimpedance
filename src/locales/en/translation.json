@@ -12,6 +12,7 @@
 
   "settings": {
     "title": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "theme": "Theme"
   }
 }

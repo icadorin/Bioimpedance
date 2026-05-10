@@ -1,11 +1,6 @@
-import type { BaseAssessmentInput } from './assessment-input.types.ts';
+import type { BaseAssessmentInput } from './assessment-input.types';
 
 export interface BioimpedanceInput extends BaseAssessmentInput {
   resistance: number;
   reactance: number;
 }
-
-export type BioimpedanceInputValues = Record<
-  'weight' | 'height' | 'age' | 'resistance' | 'reactance',
-  string
->;

@@ -1,4 +1,4 @@
-import type { BaseAssessmentInput } from './assessment-input.types.ts';
+import type { BaseAssessmentInput } from './assessment-input.types';
 
 export type SkinfoldProtocol = 'jp3' | 'jp7' | 'dw4';
 
@@ -14,7 +14,6 @@ export type SkinfoldMeasurementKey =
 
 export interface SkinfoldInput extends BaseAssessmentInput {
   protocol: SkinfoldProtocol;
-
   biceps: number;
   chest: number;
   midaxillary: number;
@@ -24,8 +23,3 @@ export interface SkinfoldInput extends BaseAssessmentInput {
   suprailiac: number;
   thigh: number;
 }
-
-export type SkinfoldInputValues = Record<
-  'weight' | 'height' | 'age' | SkinfoldMeasurementKey,
-  string
->;

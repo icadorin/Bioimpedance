@@ -24,6 +24,8 @@ export interface PhysicResult {
 export interface RecommendationResult {
   targetCalories: number;
   protein: number;
+  carbs: number;
+  fat: number;
   cardio: string;
   trainingType: string;
   notes: string[];

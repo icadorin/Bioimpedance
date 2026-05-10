@@ -1,4 +1,5 @@
-import type { BioimpedanceInput, BioimpedanceInputValues } from '../../types/bioimpedance.types';
+import type { BioimpedanceInput } from '../../types/bioimpedance.types';
+import type { BioimpedanceInputValues } from '../../types/input-values.types';
 import { InputField } from '../../../../components/shared/InputField';
 import { BasicFields } from '../BasicFields';
 

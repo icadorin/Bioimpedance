@@ -1,6 +1,6 @@
-import type { AssessmentMethod } from '../../types/assessment.types';
-import type { PhysicResult, RecommendationResult } from '../../types/result.types';
-import { DEFAULT_METHOD_DETAILS } from '../../features/assessment/constants/methodDetails';
+import type { AssessmentMethod } from '../types/assessment.types';
+import type { PhysicResult, RecommendationResult } from '../types/assessment-result.types';
+import { DEFAULT_METHOD_DETAILS } from '../constants/methodDetails';
 
 type Result = PhysicResult & RecommendationResult;
 
@@ -114,19 +114,42 @@ export default function ResultCards({ result, method }: ResultCardsProps) {
               )}
             </div>
           </div>
+          <div className="card">
+            <h3>Carboidrato</h3>
+            <div className="value">
+              {result?.carbs ? (
+                <>
+                  {result.carbs}
+                  <span className="unit"> g</span>
+                </>
+              ) : (
+                '—'
+              )}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Gordura</h3>
+            <div className="value">
+              {result?.fat ? (
+                <>
+                  {result.fat}
+                  <span className="unit"> g</span>
+                </>
+              ) : (
+                '—'
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="results-section results-section--compact">
         <h2>{methodDetails.title}</h2>
-
         <div className="method-details">
           {methodDetails.items.map((item) => (
             <div className="method-detail" key={item.label}>
               <span className="method-detail__label">{item.label}</span>
-
               <strong>{item.value}</strong>
-
               {item.description && <p className="method-detail__description">{item.description}</p>}
             </div>
           ))}

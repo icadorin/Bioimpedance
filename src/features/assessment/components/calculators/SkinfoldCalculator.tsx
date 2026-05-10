@@ -1,8 +1,5 @@
-import type {
-  SkinfoldInput,
-  SkinfoldInputValues,
-  SkinfoldMeasurementKey,
-} from '../../types/skinfold.types';
+import type { SkinfoldInput, SkinfoldMeasurementKey } from '../../types/skinfold.types';
+import type { SkinfoldInputValues } from '../../types/input-values.types';
 import { getRequiredSkinfoldFields } from '../../utils/calculationsSkin';
 import { InputField } from '../../../../components/shared/InputField';
 import { skinfoldProtocolOptions } from '../../config/selectOptions';
@@ -64,7 +61,7 @@ export default function SkinfoldCalculator({
             key={field.name}
             label={field.label}
             name={field.name}
-            value={inputValues[field.name]}
+            value={inputValues[field.name] ?? ''}
             error={errors[field.name]}
             placeholder={field.placeholder}
             unit="mm"

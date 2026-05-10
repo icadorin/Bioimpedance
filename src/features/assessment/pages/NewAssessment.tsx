@@ -1,55 +1,21 @@
-import { useEffect, useState } from 'react';
-
-// Tipagens
-import type { AssessmentMethod } from '../types';
+import { useState } from 'react';
+import type { AssessmentMethod } from '../types/assessment.types';
 import type { NavyAssessmentInput } from '../types/assessment-input.types';
 import type { BioimpedanceInput } from '../types/bioimpedance.types';
 import type { SkinfoldInput } from '../types/skinfold.types';
-
-import type { NavyInputValues } from '../types/input-values.types';
-import type { BioimpedanceInputValues } from '../types/bioimpedance.types';
-import type { SkinfoldInputValues } from '../types/skinfold.types';
-import type { SkinfoldMeasurementKey } from '../types/skinfold.types';
 import type { RangeRule } from '../constants/rangeRules';
 
-import type { PhysicResult, RecommendationResult } from '../types/assessment-result.types';
-
-// Componentes
 import NavyCalculator from '../components/calculators/NavyCalculator';
 import BioimpedanceCalculator from '../components/calculators/BioimpedanceCalculator';
 import SkinfoldCalculator from '../components/calculators/SkinfoldCalculator';
 import ImcCalculator from '../components/calculators/ImcCalculator';
-import ResultCards from '../../../components/shared/ResultCards';
+import ResultCards from '../components/ResultCards';
 import { InputField } from '../../../components/shared/InputField';
 
-// Configs
 import { methodOptions } from '../config/selectOptions';
-import { STORAGE_KEY } from '../config/storage';
-
-import {
-  initialNavyData,
-  initialNavyInputValues,
-  initialBioData,
-  initialBioInputValues,
-  initialSkinfoldData,
-  initialSkinfoldInputValues,
-} from '../config/initialStates';
-
-import {
-  navyNumericKeys,
-  navyDecimalKeys,
-  bioNumericKeys,
-  bioDecimalKeys,
-  skinfoldNumericKeys,
-  skinfoldDecimalKeys,
-} from '../config/numericFields';
-
 import { BIO_RANGE_RULES, SKINFOLD_RANGE_RULES } from '../constants/rangeRules';
 import { EMPTY_MESSAGES, INVALID_MESSAGES } from '../constants/validationMessages';
 import { userSchema } from '../validation/userSchema';
-
-// Utils
-import { parseNumericInput } from '../../../utils/parseNumericInput';
 
 import {
   calculateIMC,
@@ -60,170 +26,86 @@ import {
   calculateFatMass,
   calculateFFMI,
 } from '../utils/calculations';
-
 import {
   calculateBioImpedance,
   calculateBodyFatBio,
   calculatePhaseAngle,
   calculateTBW,
 } from '../utils/calculationsBio';
-
 import {
   calculateBodyFatSkinfold,
   calculateSkinfoldDensity,
   calculateSkinfoldSum,
   getRequiredSkinfoldFields,
 } from '../utils/calculationsSkin';
-
 import { interpretBodyFat, classifyIMC } from '../utils/interpretation';
 import { generateRecommendation } from '../utils/recommendationEngine';
 
+import { useAssessmentState } from '../hooks/useAssessmentState';
 import '../styles/newAssessment.css';
-
-type Result = PhysicResult & RecommendationResult;
-
-type SavedCalculatorData = {
-  data?: NavyAssessmentInput;
-  inputValues?: NavyInputValues;
-  bioData?: BioimpedanceInput;
-  bioInputValues?: BioimpedanceInputValues;
-  skinfoldData?: SkinfoldInput;
-  skinfoldInputValues?: SkinfoldInputValues;
-  results?: Record<AssessmentMethod, Result | null>;
-};
 
 function getRangeError(value: number, rule?: RangeRule): string | undefined {
   if (!rule) return undefined;
   if (!value || Number.isNaN(value)) return rule.emptyMessage;
   if (value < rule.min || value > rule.max) return rule.invalidMessage;
-
   return undefined;
 }
 
-function getSavedData(): SavedCalculatorData | null {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as SavedCalculatorData) : null;
-  } catch {
-    return null;
-  }
-}
-
 export default function NewAssessment() {
-  const [savedData] = useState<SavedCalculatorData | null>(() => getSavedData());
-
-  // ── método ──────────────────────────────────────────────
   const [method, setMethod] = useState<AssessmentMethod>('navy');
 
-  // ── Navy / IMC ─────────────────────────────────────
-  const [data, setData] = useState<NavyAssessmentInput>(savedData?.data || initialNavyData);
-
-  const [inputValues, setInputValues] = useState<NavyInputValues>(
-    savedData?.inputValues || initialNavyInputValues
-  );
-
-  const [errors, setErrors] = useState<Partial<Record<keyof NavyAssessmentInput, string>>>({});
-
-  // ── bioimpedância ─────────────────────────────────────────
-  const [bioData, setBioData] = useState<BioimpedanceInput>(savedData?.bioData || initialBioData);
-
-  const [bioInputValues, setBioInputValues] = useState<BioimpedanceInputValues>(
-    savedData?.bioInputValues || initialBioInputValues
-  );
-
-  const [bioErrors, setBioErrors] = useState<Partial<Record<keyof BioimpedanceInput, string>>>({});
-
-  // ── dobras cutâneas ───────────────────────────────────────
-  const [skinfoldData, setSkinfoldData] = useState<SkinfoldInput>(
-    savedData?.skinfoldData || initialSkinfoldData
-  );
-
-  const [skinfoldInputValues, setSkinfoldInputValues] = useState<SkinfoldInputValues>(
-    savedData?.skinfoldInputValues || initialSkinfoldInputValues
-  );
-
-  const [skinfoldErrors, setSkinfoldErrors] = useState<
-    Partial<Record<keyof SkinfoldInput, string>>
-  >({});
-
-  // ── resultado compartilhado ───────────────────────────────
-  const [results, setResults] = useState<Record<AssessmentMethod, Result | null>>(
-    savedData?.results || {
-      navy: null,
-      bioimpedance: null,
-      skinfold: null,
-      imc: null,
-    }
-  );
-
-  const [assessmentNotes, setAssessmentNotes] = useState<string>('');
+  const {
+    fullNavyData,
+    fullBioData,
+    fullSkinfoldData,
+    fullNavyInputValues,
+    fullBioInputValues,
+    fullSkinfoldInputValues,
+    commonData,
+    navyErrors,
+    setNavyErrors,
+    bioErrors,
+    setBioErrors,
+    skinfoldErrors,
+    setSkinfoldErrors,
+    results,
+    setResults,
+    assessmentNotes,
+    setAssessmentNotes,
+    handleNavyChange,
+    handleBioChange,
+    handleSkinfoldChange,
+    handleCommonChange,
+    resetNavy,
+    resetBio,
+    resetSkinfold,
+    resetImc,
+  } = useAssessmentState();
 
   const currentResult = results[method];
 
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        data,
-        inputValues,
-        bioData,
-        bioInputValues,
-        skinfoldData,
-        skinfoldInputValues,
-        results,
-      })
-    );
-  }, [data, inputValues, bioData, bioInputValues, skinfoldData, skinfoldInputValues, results]);
-
-  function handleNavyChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    const key = name as keyof NavyAssessmentInput;
-
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
-
-    if (navyNumericKeys.includes(key as any)) {
-      const parsed = parseNumericInput(value, navyDecimalKeys.includes(key as any));
-      if (!parsed) return;
-
-      setInputValues((prev) => ({ ...prev, [key]: value }));
-      setData((prev) => ({ ...prev, [key]: parsed.numericValue }));
-    } else {
-      if (key === 'gender' && value === 'male') {
-        setData((prev) => ({ ...prev, gender: 'male', hip: 0 }));
-        setInputValues((prev) => ({ ...prev, hip: '' }));
-        setErrors((prev) => ({ ...prev, hip: undefined }));
-      } else {
-        setData((prev) => ({ ...prev, [key]: value as any }));
-      }
-    }
-  }
-
+  // ── navy ──────────────────────────────────────────────────
   function friendlyMessage(field: keyof NavyAssessmentInput, value: number): string {
-    if (value === 0) {
+    if (value === 0)
       return EMPTY_MESSAGES[field as keyof typeof EMPTY_MESSAGES] ?? 'Campo obrigatório';
-    }
     return INVALID_MESSAGES[field as keyof typeof INVALID_MESSAGES] ?? 'Valor inválido';
   }
 
   function handleCalculate() {
-    const parsed = userSchema.safeParse(data);
-
+    const parsed = userSchema.safeParse(fullNavyData);
     if (!parsed.success) {
       const fieldErrors: Partial<Record<keyof NavyAssessmentInput, string>> = {};
-
       parsed.error.issues.forEach((err) => {
         const field = err.path[0] as keyof NavyAssessmentInput;
-        const value = typeof data[field] === 'number' ? (data[field] as number) : 0;
+        const value = typeof fullNavyData[field] === 'number' ? (fullNavyData[field] as number) : 0;
         fieldErrors[field] = friendlyMessage(field, value);
       });
-
-      setErrors(fieldErrors);
+      setNavyErrors(fieldErrors);
       return;
     }
 
-    setErrors({});
+    setNavyErrors({});
     const validData = parsed.data;
-
     const bmr = calculateBMR(validData);
     const tdee = calculateTDEE(validData, bmr);
     const bodyFat = calculateBodyFat(validData);
@@ -233,6 +115,10 @@ export default function NewAssessment() {
     const imc = calculateIMC(validData);
     const bodyFatLevel = interpretBodyFat(validData.gender, bodyFat);
     const recommendation = generateRecommendation(validData, tdee, bodyFat);
+    const navyBaseMeasurement =
+      validData.gender === 'male'
+        ? validData.waist - validData.neck
+        : validData.waist + validData.hip - validData.neck;
 
     setResults((prev) => ({
       ...prev,
@@ -246,6 +132,8 @@ export default function NewAssessment() {
         ffmi,
         bodyFatLevel,
         targetCalories: recommendation.calories,
+        carbs: recommendation.carbs,
+        fat: recommendation.fat,
         protein: recommendation.protein,
         cardio: recommendation.cardio,
         notes: recommendation.notes,
@@ -258,48 +146,25 @@ export default function NewAssessment() {
               value: 'US Navy',
               description: 'Estimativa baseada em circunferências corporais',
             },
+            {
+              label: 'Medida base',
+              value: `${navyBaseMeasurement.toFixed(1)} cm`,
+              description: 'Valor principal usado no cálculo',
+            },
+            {
+              label: 'Medidas usadas',
+              value:
+                validData.gender === 'male' ? 'Cintura e pescoço' : 'Cintura, pescoço e quadril',
+              description: 'Circunferências utilizadas na fórmula',
+            },
           ],
         },
       },
     }));
   }
 
-  function handleReset() {
-    localStorage.removeItem(STORAGE_KEY);
-
-    setData({
-      ...initialNavyData,
-      gender: data.gender,
-    });
-
-    setInputValues(initialNavyInputValues);
-    setErrors({});
-
-    setResults((prev) => ({
-      ...prev,
-      navy: null,
-    }));
-  }
-
-  // ── handlers bio ──────────────────────────────────────────
-  function handleBioChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    const key = name as keyof BioimpedanceInput;
-
-    setBioErrors((prev) => ({ ...prev, [key]: undefined }));
-
-    if (bioNumericKeys.includes(key)) {
-      const parsed = parseNumericInput(value, bioDecimalKeys.includes(key));
-      if (!parsed) return;
-      setBioInputValues((prev) => ({ ...prev, [key]: value }));
-      setBioData((prev) => ({ ...prev, [key]: parsed.numericValue }));
-    } else {
-      setBioData((prev) => ({ ...prev, [key]: value }));
-    }
-  }
-
+  // ── bio ───────────────────────────────────────────────────
   function handleBioCalculate() {
-    const { weight, height } = bioData;
     const newErrors: Partial<Record<keyof BioimpedanceInput, string>> = {};
     const fieldsToValidate: (keyof BioimpedanceInput)[] = [
       'weight',
@@ -310,33 +175,30 @@ export default function NewAssessment() {
     ];
 
     fieldsToValidate.forEach((field) => {
-      const error = getRangeError(bioData[field] as number, BIO_RANGE_RULES[field]);
-
-      if (error) {
-        newErrors[field] = error;
-      }
+      const error = getRangeError(fullBioData[field] as number, BIO_RANGE_RULES[field]);
+      if (error) newErrors[field] = error;
     });
 
     if (Object.keys(newErrors).length > 0) {
       setBioErrors(newErrors);
       return;
     }
-
     setBioErrors({});
 
-    const bioAsUserInput = { ...bioData, waist: 0, neck: 0, hip: 0 };
-    const bodyFat = calculateBodyFatBio(bioData);
+    const { weight, height } = fullBioData;
+    const bioAsUserInput = { ...fullBioData, waist: 0, neck: 0, hip: 0 };
+    const bodyFat = calculateBodyFatBio(fullBioData);
     const leanMass = calculateLeanMass(weight, bodyFat);
     const fatMass = calculateFatMass(weight, bodyFat);
     const imc = calculateIMC(bioAsUserInput);
     const bmr = calculateBMR(bioAsUserInput);
     const tdee = calculateTDEE(bioAsUserInput, bmr);
     const ffmi = calculateFFMI(leanMass, height);
-    const bodyFatLevel = interpretBodyFat(bioData.gender, bodyFat);
+    const bodyFatLevel = interpretBodyFat(fullBioData.gender, bodyFat);
     const recommendation = generateRecommendation(bioAsUserInput, tdee, bodyFat);
-    const impedance = calculateBioImpedance(bioData);
-    const phaseAngle = calculatePhaseAngle(bioData);
-    const tbw = calculateTBW(bioData);
+    const impedance = calculateBioImpedance(fullBioData);
+    const phaseAngle = calculatePhaseAngle(fullBioData);
+    const tbw = calculateTBW(fullBioData);
 
     setResults((prev) => ({
       ...prev,
@@ -350,6 +212,8 @@ export default function NewAssessment() {
         ffmi,
         bodyFatLevel,
         targetCalories: recommendation.calories,
+        carbs: recommendation.carbs,
+        fat: recommendation.fat,
         protein: recommendation.protein,
         cardio: recommendation.cardio,
         notes: recommendation.notes,
@@ -378,135 +242,46 @@ export default function NewAssessment() {
     }));
   }
 
-  function handleBioReset() {
-    setBioData(initialBioData);
-    setBioInputValues(initialBioInputValues);
-    setBioErrors({});
-
-    setResults((prev) => ({
-      ...prev,
-      bioimpedance: null,
-    }));
-  }
-
-  // ── handlers dobras cutâneas ──────────────────────────────
-  function handleSkinfoldChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    const key = name as keyof SkinfoldInput;
-
-    if (key === 'protocol' || key === 'gender') {
-      const nextData = { ...skinfoldData, [key]: value };
-      const nextFields = getRequiredSkinfoldFields(nextData);
-
-      const allMeasurementKeys: SkinfoldMeasurementKey[] = [
-        'biceps',
-        'chest',
-        'midaxillary',
-        'triceps',
-        'subscapular',
-        'abdominal',
-        'suprailiac',
-        'thigh',
-      ];
-
-      const removedFields = allMeasurementKeys.filter((f) => !nextFields.includes(f));
-
-      setSkinfoldData((prev) => {
-        const updated: SkinfoldInput = { ...prev, [key]: value };
-
-        removedFields.forEach((field) => {
-          updated[field] = 0;
-        });
-
-        return updated;
-      });
-
-      setSkinfoldInputValues((prev) => {
-        const updated = { ...prev };
-        removedFields.forEach((field) => {
-          updated[field] = '';
-        });
-        return updated;
-      });
-
-      setSkinfoldErrors((prev) => {
-        const updated = { ...prev };
-        removedFields.forEach((field) => {
-          delete updated[field];
-        });
-        return updated;
-      });
-
-      return;
-    }
-
-    // === Campos numéricos normais ===
-    setSkinfoldErrors((prev) => ({ ...prev, [key]: undefined }));
-
-    if (skinfoldNumericKeys.includes(key as any)) {
-      const parsed = parseNumericInput(value, skinfoldDecimalKeys.includes(key as any));
-      if (!parsed) return;
-
-      setSkinfoldInputValues((prev) => ({ ...prev, [key]: value }));
-      setSkinfoldData((prev) => ({ ...prev, [key]: parsed.numericValue }));
-    } else {
-      setSkinfoldData((prev) => ({ ...prev, [key]: value as any }));
-    }
-  }
+  // ── skinfold ──────────────────────────────────────────────
   function handleSkinfoldCalculate() {
-    const { weight, height } = skinfoldData;
     const newErrors: Partial<Record<keyof SkinfoldInput, string>> = {};
-    const fieldsToValidate: (keyof SkinfoldInput)[] = [
+    const fieldsToValidate = [
       'weight',
       'height',
       'age',
-      ...getRequiredSkinfoldFields(skinfoldData),
-    ];
+      ...getRequiredSkinfoldFields(fullSkinfoldData),
+    ] as (keyof SkinfoldInput)[];
 
     fieldsToValidate.forEach((field) => {
-      const error = getRangeError(skinfoldData[field] as number, SKINFOLD_RANGE_RULES[field]);
-
-      if (error) {
-        newErrors[field] = error;
-      }
+      const error = getRangeError(fullSkinfoldData[field] as number, SKINFOLD_RANGE_RULES[field]);
+      if (error) newErrors[field] = error;
     });
 
     if (Object.keys(newErrors).length > 0) {
       setSkinfoldErrors(newErrors);
       return;
     }
-
     setSkinfoldErrors({});
 
-    const skinfoldAsUserInput: NavyAssessmentInput = {
-      weight: skinfoldData.weight,
-      height: skinfoldData.height,
-      age: skinfoldData.age,
-      gender: skinfoldData.gender,
-      activityLevel: skinfoldData.activityLevel,
-      objective: skinfoldData.objective,
-      waist: 0,
-      neck: 0,
-      hip: 0,
-    };
-
-    const bodyFat = calculateBodyFatSkinfold(skinfoldData);
+    const { weight, height } = fullSkinfoldData;
+    const skinfoldAsUserInput: NavyAssessmentInput = { ...commonData, waist: 0, neck: 0, hip: 0 };
+    const bodyFat = calculateBodyFatSkinfold(fullSkinfoldData);
     const leanMass = calculateLeanMass(weight, bodyFat);
     const fatMass = calculateFatMass(weight, bodyFat);
     const imc = calculateIMC(skinfoldAsUserInput);
     const bmr = calculateBMR(skinfoldAsUserInput);
     const tdee = calculateTDEE(skinfoldAsUserInput, bmr);
     const ffmi = calculateFFMI(leanMass, height);
-    const bodyFatLevel = interpretBodyFat(skinfoldData.gender, bodyFat);
+    const bodyFatLevel = interpretBodyFat(fullSkinfoldData.gender, bodyFat);
     const recommendation = generateRecommendation(skinfoldAsUserInput, tdee, bodyFat);
-    const skinfoldSum = calculateSkinfoldSum(skinfoldData);
-    const bodyDensity = calculateSkinfoldDensity(skinfoldData);
+    const skinfoldSum = calculateSkinfoldSum(fullSkinfoldData);
+    const bodyDensity = calculateSkinfoldDensity(fullSkinfoldData);
     const protocolLabel =
-      skinfoldData.protocol === 'jp3'
+      fullSkinfoldData.protocol === 'jp3'
         ? 'Jackson-Pollock 3 dobras'
-        : skinfoldData.protocol === 'jp7'
+        : fullSkinfoldData.protocol === 'jp7'
           ? 'Jackson-Pollock 7 dobras'
-          : skinfoldData.protocol === 'dw4'
+          : fullSkinfoldData.protocol === 'dw4'
             ? 'Durnin-Womersley 4 dobras'
             : 'Protocolo desconhecido';
 
@@ -523,6 +298,8 @@ export default function NewAssessment() {
         bodyFatLevel,
         targetCalories: recommendation.calories,
         protein: recommendation.protein,
+        carbs: recommendation.carbs,
+        fat: recommendation.fat,
         cardio: recommendation.cardio,
         notes: recommendation.notes,
         trainingType: recommendation.trainingType,
@@ -550,42 +327,30 @@ export default function NewAssessment() {
     }));
   }
 
-  function handleSkinfoldReset() {
-    setSkinfoldData(initialSkinfoldData);
-    setSkinfoldInputValues(initialSkinfoldInputValues);
-    setSkinfoldErrors({});
-
-    setResults((prev) => ({
-      ...prev,
-      skinfold: null,
-    }));
-  }
-
+  // ── imc ───────────────────────────────────────────────────
   function handleImcCalculate() {
     const newErrors: Partial<Record<keyof NavyAssessmentInput, string>> = {};
-
-    if (!data.weight || data.weight < 20 || data.weight > 300) {
-      newErrors.weight = data.weight === 0 ? 'Informe seu peso' : 'Peso deve ser entre 20 e 300 kg';
-    }
-    if (!data.height || data.height < 50 || data.height > 250) {
+    if (!commonData.weight || commonData.weight < 20 || commonData.weight > 300)
+      newErrors.weight =
+        commonData.weight === 0 ? 'Informe seu peso' : 'Peso deve ser entre 20 e 300 kg';
+    if (!commonData.height || commonData.height < 50 || commonData.height > 250)
       newErrors.height =
-        data.height === 0 ? 'Informe sua altura' : 'Altura deve ser entre 50 e 250 cm';
-    }
-    if (!data.age || data.age < 10 || data.age > 100) {
-      newErrors.age = data.age === 0 ? 'Informe sua idade' : 'Idade deve ser entre 10 e 100 anos';
-    }
+        commonData.height === 0 ? 'Informe sua altura' : 'Altura deve ser entre 50 e 250 cm';
+    if (!commonData.age || commonData.age < 10 || commonData.age > 100)
+      newErrors.age =
+        commonData.age === 0 ? 'Informe sua idade' : 'Idade deve ser entre 10 e 100 anos';
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setNavyErrors(newErrors);
       return;
     }
+    setNavyErrors({});
 
-    setErrors({});
-
-    const bmr = calculateBMR(data);
-    const tdee = calculateTDEE(data, bmr);
-    const imc = calculateIMC(data);
-    const recommendation = generateRecommendation(data, tdee, 0);
+    const dataForCalc: NavyAssessmentInput = { ...commonData, waist: 0, neck: 0, hip: 0 };
+    const bmr = calculateBMR(dataForCalc);
+    const tdee = calculateTDEE(dataForCalc, bmr);
+    const imc = calculateIMC(dataForCalc);
+    const recommendation = generateRecommendation(dataForCalc, tdee, 0);
 
     setResults((prev) => ({
       ...prev,
@@ -599,6 +364,8 @@ export default function NewAssessment() {
         ffmi: 0,
         bodyFatLevel: '—',
         targetCalories: recommendation.calories,
+        carbs: recommendation.carbs,
+        fat: recommendation.fat,
         protein: recommendation.protein,
         cardio: recommendation.cardio,
         notes: recommendation.notes,
@@ -616,24 +383,26 @@ export default function NewAssessment() {
               value: classifyIMC(imc),
               description: 'Baseado nos critérios da OMS',
             },
+            {
+              label: 'Faixa saudável',
+              value: '18.5 – 24.9',
+              description: 'Intervalo considerado saudável pela OMS',
+            },
+            {
+              label: 'Limitação',
+              value: 'Atenção',
+              description: 'Não diferencia massa magra de gordura corporal',
+            },
           ],
         },
       },
     }));
   }
 
-  function handleImcReset() {
-    setData({ ...initialNavyData, gender: data.gender });
-    setInputValues(initialNavyInputValues);
-    setErrors({});
-    setResults((prev) => ({ ...prev, imc: null }));
-  }
-
   // ── render ────────────────────────────────────────────────
   return (
     <div className="container">
       <h1>Nova avaliação</h1>
-
       <div className="main-calculator-card">
         <div className="calculator-layout">
           <div className="left-panel">
@@ -644,53 +413,53 @@ export default function NewAssessment() {
                 name="method"
                 value={method}
                 options={methodOptions}
-                onChange={(e) => setMethod(e.target.value as AssessmentMethod)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setMethod(e.target.value as AssessmentMethod)
+                }
               />
             </div>
 
             {method === 'navy' && (
               <NavyCalculator
-                data={data}
-                inputValues={inputValues}
-                errors={errors}
+                data={fullNavyData}
+                inputValues={fullNavyInputValues}
+                errors={navyErrors}
                 handleChange={handleNavyChange}
                 handleCalculate={handleCalculate}
-                handleReset={handleReset}
+                handleReset={resetNavy}
               />
             )}
-
             {method === 'bioimpedance' && (
               <BioimpedanceCalculator
-                data={bioData}
-                inputValues={bioInputValues}
+                data={fullBioData}
+                inputValues={fullBioInputValues}
                 errors={bioErrors}
                 handleChange={handleBioChange}
                 handleCalculate={handleBioCalculate}
-                handleReset={handleBioReset}
+                handleReset={resetBio}
               />
             )}
-
             {method === 'skinfold' && (
               <SkinfoldCalculator
-                data={skinfoldData}
-                inputValues={skinfoldInputValues}
+                data={fullSkinfoldData}
+                inputValues={fullSkinfoldInputValues}
                 errors={skinfoldErrors}
                 handleChange={handleSkinfoldChange}
                 handleCalculate={handleSkinfoldCalculate}
-                handleReset={handleSkinfoldReset}
+                handleReset={resetSkinfold}
+              />
+            )}
+            {method === 'imc' && (
+              <ImcCalculator
+                data={fullNavyData}
+                inputValues={fullNavyInputValues}
+                errors={navyErrors}
+                handleChange={handleCommonChange}
+                handleCalculate={handleImcCalculate}
+                handleReset={resetImc}
               />
             )}
 
-            {method === 'imc' && (
-              <ImcCalculator
-                data={data}
-                inputValues={inputValues}
-                errors={errors}
-                handleChange={handleNavyChange}
-                handleCalculate={handleImcCalculate}
-                handleReset={handleImcReset}
-              />
-            )}
             <div className="assessment-notes">
               <label className="field-label">Observações</label>
               <textarea
