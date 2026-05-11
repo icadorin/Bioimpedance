@@ -39,6 +39,7 @@ type SkinfoldSpecificData = {
 type NavyErrors = Partial<Record<keyof NavyAssessmentInput, string>>;
 type BioErrors = Partial<Record<keyof BioimpedanceInput, string>>;
 type SkinfoldErrors = Partial<Record<SkinfoldMeasurementKey | 'weight' | 'height' | 'age', string>>;
+type ImcErrors = Partial<Record<'weight' | 'height' | 'age', string>>;
 
 const SKINFOLD_MEASUREMENT_KEYS: SkinfoldMeasurementKey[] = [
   'biceps',
@@ -136,6 +137,8 @@ export function useAssessmentState() {
     saved?.skinfoldInputValues ?? initialSkinfoldInputValues
   );
   const [skinfoldErrors, setSkinfoldErrors] = useState<SkinfoldErrors>({});
+
+  const [imcErrors, setImcErrors] = useState<ImcErrors>({});
 
   const [results, setResults] = useState<Record<AssessmentMethod, Result | null>>(
     saved?.results ?? { navy: null, bioimpedance: null, skinfold: null, imc: null }
@@ -271,7 +274,7 @@ export function useAssessmentState() {
   function resetImc() {
     setCommonData({ ...initialCommonData, gender: commonData.gender });
     setCommonInputValues(initialCommonInputValues);
-    setNavyErrors({});
+    setImcErrors({});
     setResults((prev) => ({ ...prev, imc: null }));
   }
 
@@ -358,6 +361,7 @@ export function useAssessmentState() {
     setNavyErrors({});
     setBioErrors({});
     setSkinfoldErrors({});
+    setImcErrors({});
   };
 
   function resetSkinfold() {
@@ -384,6 +388,8 @@ export function useAssessmentState() {
     // erros
     navyErrors,
     setNavyErrors,
+    imcErrors,
+    setImcErrors,
     bioErrors,
     setBioErrors,
     skinfoldErrors,

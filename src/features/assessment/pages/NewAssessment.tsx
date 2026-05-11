@@ -64,6 +64,8 @@ export default function NewAssessment() {
     commonData,
     navyErrors,
     setNavyErrors,
+    imcErrors,
+    setImcErrors,
     bioErrors,
     setBioErrors,
     skinfoldErrors,
@@ -341,10 +343,10 @@ export default function NewAssessment() {
         commonData.age === 0 ? 'Informe sua idade' : 'Idade deve ser entre 10 e 100 anos';
 
     if (Object.keys(newErrors).length > 0) {
-      setNavyErrors(newErrors);
+      setImcErrors(newErrors);
       return;
     }
-    setNavyErrors({});
+    setImcErrors({});
 
     const dataForCalc: NavyAssessmentInput = { ...commonData, waist: 0, neck: 0, hip: 0 };
     const bmr = calculateBMR(dataForCalc);
@@ -453,7 +455,7 @@ export default function NewAssessment() {
               <ImcCalculator
                 data={fullNavyData}
                 inputValues={fullNavyInputValues}
-                errors={navyErrors}
+                errors={imcErrors}
                 handleChange={handleCommonChange}
                 handleCalculate={handleImcCalculate}
                 handleReset={resetImc}
