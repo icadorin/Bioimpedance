@@ -29,7 +29,7 @@ interface BasicFieldsProps {
 
 export function BasicFields({ data, inputValues, errors, onChange }: BasicFieldsProps) {
   return (
-    <>
+    <div className="basic-fields">
       <h2>Dados básicos</h2>
       <div className="form-grid">
         <InputField
@@ -87,6 +87,6 @@ export function BasicFields({ data, inputValues, errors, onChange }: BasicFields
           onChange={onChange}
         />
       </div>
-    </>
+    </div>
   );
 }

@@ -252,6 +252,71 @@
   border-color: #6139a5;
 }
 
+.assessment-client-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.assessment-client-banner span {
+  color: var(--muted);
+}
+
+.assessment-client-banner strong {
+  font-weight: 700;
+}
+
+.assessment-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1150px;
+  margin: 0 auto 16px;
+}
+
+.method-selector-inline {
+  flex: 1;
+  max-width: 320px;
+}
+
+.btn-reset-all {
+  margin-top: 0 !important;
+  white-space: nowrap;
+  height: 44px;
+  padding: 0 18px !important;
+}
+
+.basic-fields {
+  padding: 24px 24px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.specific-fields {
+  padding: 24px;
+}
+
+.form {
+  padding: 0;
+}
+
+.form > .basic-fields + * {
+  padding-top: 20px;
+}
+
+.notes-counter {
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 /* Desktop */
 @media (min-width: 1100px) {
   .calculator-layout {
@@ -291,14 +356,17 @@
     flex-direction: column;
     width: 100%;
   }
+
   .left-panel {
     width: 100%;
   }
+
   .form {
     width: 100%;
     flex: none;
     border-right: none;
   }
+
   .main-calculator-card {
     margin: 0 16px;
   }
@@ -310,6 +378,7 @@
     max-width: none;
     position: relative;
   }
+
   .calculator-layout .results {
     width: 100%;
     display: flex;
@@ -322,9 +391,11 @@
     width: 100%;
     max-width: 900px;
   }
+
   .results-section:first-child .dashboard {
     grid-template-columns: repeat(5, 1fr);
   }
+
   .results-section:last-child .dashboard {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -335,13 +406,25 @@
   .calculator-layout {
     flex-direction: column;
   }
+
   .calculator-layout .form,
   .calculator-layout .results {
     width: 100%;
   }
+  .assessment-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 16px;
+  }
+
+  .method-selector-inline {
+    max-width: 100%;
+  }
+
   .dashboard {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .results-section:first-child .dashboard,
   .results-section:last-child .dashboard {
     grid-template-columns: repeat(2, 1fr);
@@ -352,6 +435,7 @@
   .form-grid {
     grid-template-columns: 1fr;
   }
+
   .form-actions {
     flex-direction: column;
   }

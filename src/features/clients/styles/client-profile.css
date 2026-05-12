@@ -1,0 +1,224 @@
+/* ── página ───────────────────────────────────────────── */
+.client-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── header ───────────────────────────────────────────── */
+.client-profile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.client-profile-header h1 {
+  margin-bottom: 6px;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.client-profile-header p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.client-profile-header__status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* ── quick actions ────────────────────────────────────── */
+.client-quick-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.client-quick-actions button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.client-quick-actions button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+/* ── info card ────────────────────────────────────────── */
+.client-info-card {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+}
+
+.client-info-card h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.client-info-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.client-info-card__grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.client-info-card__grid span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.client-info-card__grid p {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ── assessment section ───────────────────────────────── */
+.client-assessment-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.client-assessment-section__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--input-bg);
+}
+
+.client-assessment-section__card strong {
+  text-transform: capitalize;
+  color: var(--text);
+}
+
+.client-assessment-section__card p,
+.client-assessment-section__card small {
+  color: var(--muted);
+}
+
+/* ── context bar ──────────────────────────────────────── */
+.client-context-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.client-context-bar .client-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.client-context-bar .avatar {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.client-context-bar .client-meta strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.client-context-bar .client-meta small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.client-context-bar .client-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.client-context-bar .client-actions button {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 0;
+}
+
+.client-context-bar .client-actions button:hover {
+  background: var(--item-hover);
+}
+
+/* ── status badges ────────────────────────────────────── */
+.client-profile-header__status--active,
+.client-card__status--active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.client-profile-header__status--pending,
+.client-card__status--pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.client-profile-header__status--inactive,
+.client-card__status--inactive {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .client-profile-page {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .client-profile-header {
+    flex-direction: column;
+  }
+
+  .client-quick-actions {
+    flex-direction: column;
+  }
+}

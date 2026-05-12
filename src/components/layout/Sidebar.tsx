@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ROUTES } from '../../routes/paths';
 import '../../styles/sidebar.css';
 
 export function Sidebar() {
@@ -93,16 +94,16 @@ export function Sidebar() {
           </div>
 
           <div
-            className={`item ${isActive('/students') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/students')}
+            className={`item ${isActive(ROUTES.clients) ? 'active' : ''}`}
+            onClick={() => handleNavigate(ROUTES.clients)}
           >
             <Users size={18} />
-            <span>{t('sidebar.students')}</span>
+            <span>{t('sidebar.clients')}</span>
           </div>
 
           <div
-            className={`item ${isActive('/') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/')}
+            className={`item ${isActive(ROUTES.newAssessment) ? 'active' : ''}`}
+            onClick={() => handleNavigate(ROUTES.newAssessment)}
           >
             <ClipboardPlus size={18} />
             <span>{t('sidebar.newAssessment')}</span>

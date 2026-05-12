@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
 import { Sidebar } from './components/layout/Sidebar';
+import { ROUTES } from './routes/paths';
 import NewAssessment from './features/assessment/pages/NewAssessment';
+import Clients from './features/clients/pages/Clients';
+import ClientProfile from './features/clients/pages/ClientProfile';
 import Settings from './pages/Settings';
 
 export default function App() {
@@ -35,7 +37,10 @@ export default function App() {
         <Sidebar />
         <main className="content">
           <Routes>
-            <Route path="/" element={<NewAssessment />} />
+            <Route path={ROUTES.newAssessment} element={<NewAssessment />} />
+            <Route path={ROUTES.newAssessmentWithClient} element={<NewAssessment />} />
+            <Route path={ROUTES.clients} element={<Clients />} />
+            <Route path={ROUTES.clientProfile} element={<ClientProfile />} />
             <Route
               path="/settings"
               element={<Settings theme={theme} onToggleTheme={toggleTheme} />}
