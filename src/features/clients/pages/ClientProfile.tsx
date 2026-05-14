@@ -26,7 +26,7 @@ export default function ClientProfile() {
       <ClientProfileHeader client={client} />
       <ClientQuickActions clientId={client.id} />
       <ClientInfoCard client={client} />
-      <ClientAssessmentSection assessments={assessments} />
+      <ClientAssessmentSection assessments={assessments} clientId={id || ''} />{' '}
     </div>
   );
 }

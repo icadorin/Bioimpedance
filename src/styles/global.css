@@ -215,6 +215,19 @@ body.light .content {
   scrollbar-color: #4c3672 var(--panel);
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;

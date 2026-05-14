@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import type { AssessmentMethod } from '../types/assessment.types';
 import type { NavyAssessmentInput } from '../types/assessment-input.types';
 import type { BioimpedanceInput } from '../types/bioimpedance.types';
+import { useAssessments } from '../hooks/useAssessments';
 import NavyCalculator from '../components/calculators/NavyCalculator';
 import BioimpedanceCalculator from '../components/calculators/BioimpedanceCalculator';
 import SkinfoldCalculator from '../components/calculators/SkinfoldCalculator';
@@ -105,12 +106,14 @@ const INITIAL_SPECIFIC: SpecificData = {
 
 export default function NewAssessment() {
   const { clientId } = useParams<{ clientId: string }>();
+  const { addAssessment } = useAssessments();
   const { getClientById, getClientAssessments } = useClients();
 
   const selectedClient = clientId ? getClientById(clientId) : null;
   const clientAssessments = selectedClient ? getClientAssessments(selectedClient.id) : [];
   const lastAssessment = clientAssessments[0] ?? null;
 
+  const [savedMessage, setSavedMessage] = useState<string>('');
   const [method, setMethod] = useState<AssessmentMethod>('navy');
   const [currentResult, setCurrentResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -189,6 +192,80 @@ export default function NewAssessment() {
       setSpecificInputValues(cleanSpecificInputs);
     }
   }, [clientId]);
+
+  function handleSaveAssessment() {
+    if (!currentResult) {
+      alert('Calcule a avaliação antes de salvar.');
+      return;
+    }
+
+    if (!commonData.gender || !commonData.weight || !commonData.height || !commonData.age) {
+      alert('Preencha todos os campos obrigatórios antes de salvar.');
+      return;
+    }
+
+    // Monta os dados específicos baseado no método
+    const specificData_mapped: any = {};
+
+    if (method === 'navy') {
+      specificData_mapped.navy = {
+        waist: specificData.waist,
+        neck: specificData.neck,
+        hip: commonData.gender === 'female' ? specificData.hip : undefined,
+      };
+    } else if (method === 'bioimpedance') {
+      specificData_mapped.bioimpedance = {
+        resistance: specificData.resistance,
+        reactance: specificData.reactance,
+      };
+    } else if (method === 'skinfold') {
+      specificData_mapped.skinfold = {
+        protocol: specificData.protocol,
+        ...Object.fromEntries(
+          Object.entries(specificData).filter(([key]) =>
+            [
+              'biceps',
+              'triceps',
+              'subscapular',
+              'chest',
+              'midaxillary',
+              'abdominal',
+              'suprailiac',
+              'thigh',
+            ].includes(key)
+          )
+        ),
+      };
+    }
+
+    const newAssessment = addAssessment({
+      clientId: clientId || undefined,
+      date: new Date().toISOString().split('T')[0],
+      method,
+      weight: commonData.weight,
+      height: commonData.height,
+      age: commonData.age,
+      gender: commonData.gender as 'male' | 'female',
+      ...specificData_mapped,
+      results: {
+        imc: currentResult.imc,
+        bodyFat: currentResult.bodyFat,
+        leanMass: currentResult.leanMass,
+        fatMass: currentResult.fatMass,
+        ffmi: currentResult.ffmi,
+        bmr: currentResult.bmr,
+        tdee: currentResult.tdee,
+        targetCalories: currentResult.targetCalories,
+        bodyFatLevel: currentResult.bodyFatLevel,
+      },
+      observations: assessmentNotes || undefined,
+    });
+
+    setSavedMessage(`Avaliação salva com sucesso! (${newAssessment.date})`);
+
+    // Limpa a mensagem após 5 segundos
+    setTimeout(() => setSavedMessage(''), 5000);
+  }
 
   function validateCommonFields(): Record<string, string> {
     const errs: Record<string, string> = {};
@@ -826,6 +903,61 @@ export default function NewAssessment() {
               />
               <small className="notes-counter">{assessmentNotes.length}/500</small>
             </div>
+
+            {savedMessage && (
+              <div
+                style={{
+                  padding: '12px 32px',
+                  marginTop: '8px',
+                }}
+              >
+                <div
+                  style={{
+                    background: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    color: '#22c55e',
+                    fontWeight: 500,
+                  }}
+                >
+                  {savedMessage}
+                </div>
+              </div>
+            )}
+
+            {currentResult && (
+              <div
+                style={{
+                  padding: '0 32px 32px',
+                  marginTop: '8px',
+                }}
+              >
+                <button
+                  onClick={handleSaveAssessment}
+                  style={{
+                    width: '100%',
+                    background: '#22c55e',
+                    fontSize: '16px',
+                    padding: '14px',
+                  }}
+                >
+                  Salvar Avaliação
+                </button>
+                {clientId && (
+                  <p
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--muted)',
+                      fontSize: '12px',
+                      marginTop: '8px',
+                    }}
+                  >
+                    Será vinculada ao cliente atual
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <ResultCards result={currentResult} method={method} />

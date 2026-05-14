@@ -86,8 +86,8 @@ export function Sidebar() {
 
         <nav>
           <div
-            className={`item ${isActive('/dashboard') ? 'active' : ''}`}
-            onClick={() => handleNavigate('/dashboard')}
+            className={`item ${isActive(ROUTES.dashboard) ? 'active' : ''}`}
+            onClick={() => handleNavigate(ROUTES.dashboard)}
           >
             <LayoutDashboard size={18} />
             <span>{t('sidebar.dashboard')}</span>

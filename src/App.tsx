@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/layout/Sidebar';
 import { ROUTES } from './routes/paths';
+import Dashboard from './features/dashboard/pages/Dashboard';
 import NewAssessment from './features/assessment/pages/NewAssessment';
 import Clients from './features/clients/pages/Clients';
 import ClientProfile from './features/clients/pages/ClientProfile';
@@ -37,6 +38,7 @@ export default function App() {
         <Sidebar />
         <main className="content">
           <Routes>
+            <Route path={ROUTES.dashboard} element={<Dashboard />} />
             <Route path={ROUTES.newAssessment} element={<NewAssessment />} />
             <Route path={ROUTES.newAssessmentWithClient} element={<NewAssessment />} />
             <Route path={ROUTES.clients} element={<Clients />} />
