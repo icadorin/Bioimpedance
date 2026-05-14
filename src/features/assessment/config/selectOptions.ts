@@ -1,6 +1,7 @@
 import type { AssessmentMethod } from '../types/assessment.types';
 
 export const genderOptions = [
+  { value: '', label: 'Selecione o sexo' },
   { value: 'male', label: 'Masculino' },
   { value: 'female', label: 'Feminino' },
 ];

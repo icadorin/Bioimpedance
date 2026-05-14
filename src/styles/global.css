@@ -115,6 +115,10 @@ input.error {
   border-color: #b85252;
 }
 
+select.error {
+  border-color: #b85252;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,

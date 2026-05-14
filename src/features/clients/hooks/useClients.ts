@@ -5,7 +5,7 @@ import type { Client } from '../types/client.types';
 import type { Assessment } from '../../assessment/types/assessment.types';
 
 export function useClients() {
-  const [clients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>(mockClients);
   const [assessments] = useState<Assessment[]>(mockAssessments);
   const [search, setSearch] = useState('');
 
@@ -35,6 +35,34 @@ export function useClients() {
     [assessments]
   );
 
+  // Adicionar cliente
+  const addClient = useCallback((clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newClient: Client = {
+      ...clientData,
+      id: String(Date.now()), // ID temporário
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setClients((prev) => [...prev, newClient]);
+    return newClient;
+  }, []);
+
+  // Atualizar cliente (para edição futura)
+  const updateClient = useCallback((id: string, updates: Partial<Client>) => {
+    setClients((prev) =>
+      prev.map((client) =>
+        client.id === id ? { ...client, ...updates, updatedAt: new Date().toISOString() } : client
+      )
+    );
+  }, []);
+
+  // Remover cliente (editar mais além)
+  const deleteClient = useCallback((id: string) => {
+    setClients((prev) => prev.filter((client) => client.id !== id));
+  }, []);
+
   return {
     clients,
     filteredClients,
@@ -42,5 +70,8 @@ export function useClients() {
     setSearch,
     getClientById,
     getClientAssessments,
+    addClient,
+    updateClient,
+    deleteClient,
   };
 }

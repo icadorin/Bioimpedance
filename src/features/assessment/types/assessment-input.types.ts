@@ -1,4 +1,4 @@
-export type Gender = 'male' | 'female';
+export type Gender = 'male' | 'female' | '';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
 
@@ -8,7 +8,6 @@ export interface BaseAssessmentInput {
   weight: number;
   height: number;
   age: number;
-
   gender: Gender;
   activityLevel: ActivityLevel;
   objective: Objective;

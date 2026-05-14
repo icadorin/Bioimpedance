@@ -18,6 +18,7 @@ interface BasicFieldsErrors {
   weight?: string;
   height?: string;
   age?: string;
+  gender?: string;
 }
 
 interface BasicFieldsProps {
@@ -68,6 +69,7 @@ export function BasicFields({ data, inputValues, errors, onChange }: BasicFields
           name="gender"
           value={data.gender}
           options={genderOptions}
+          error={errors.gender}
           onChange={onChange}
         />
         <InputField

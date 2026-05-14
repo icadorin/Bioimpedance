@@ -294,9 +294,22 @@
 }
 
 .basic-fields {
-  padding: 24px 24px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 0;
+  border-bottom: none;
   margin-bottom: 0;
+}
+
+.basic-fields h2 {
+  margin: 0 0 12px 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.basic-fields .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
 }
 
 .specific-fields {
@@ -304,7 +317,23 @@
 }
 
 .form {
-  padding: 0;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form > :first-child {
+  margin-top: 0;
+}
+
+.form .basic-fields {
+  margin-top: 0;
+}
+
+.form > .basic-fields + * {
+  padding-top: 0;
 }
 
 .form > .basic-fields + * {

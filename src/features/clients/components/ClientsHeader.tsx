@@ -3,9 +3,10 @@ import ClientSearch from './ClientSearch';
 interface Props {
   search: string;
   onSearchChange: (value: string) => void;
+  onNewClient: () => void;
 }
 
-export default function ClientsHeader({ search, onSearchChange }: Props) {
+export default function ClientsHeader({ search, onSearchChange, onNewClient }: Props) {
   return (
     <div className="clients-header">
       <div className="clients-header__content">
@@ -14,7 +15,9 @@ export default function ClientsHeader({ search, onSearchChange }: Props) {
       </div>
       <div className="clients-header__actions">
         <ClientSearch value={search} onChange={onSearchChange} />
-        <button className="clients-header__button">+ Novo cliente</button>
+        <button className="clients-header__button" onClick={onNewClient}>
+          + Novo cliente
+        </button>
       </div>
     </div>
   );

@@ -145,12 +145,10 @@ export default function NewAssessment() {
   } = useAssessmentState();
 
   useEffect(() => {
-    // Limpa TODOS os estados
     setErrors({});
     setCurrentResult(null);
     setSpecificData({ ...INITIAL_SPECIFIC });
 
-    // Reseta input values específicos
     const cleanSpecificInputs = {
       waist: '',
       neck: '',
@@ -171,12 +169,11 @@ export default function NewAssessment() {
     if (selectedClient && lastAssessment) {
       loadFromAssessment(lastAssessment);
     } else if (selectedClient) {
-      // Dados zerados para cliente sem avaliação
       setCommonData({
         weight: 0,
         height: 0,
         age: 0,
-        gender: 'male',
+        gender: '',
         activityLevel: 'moderate',
         objective: 'maintenance',
       });
@@ -187,52 +184,13 @@ export default function NewAssessment() {
         age: '',
       });
     } else {
-      // Sem cliente, reseta completamente
       resetAll();
-      // Garante que os específicos também estão limpos
       setSpecificData({ ...INITIAL_SPECIFIC });
       setSpecificInputValues(cleanSpecificInputs);
     }
   }, [clientId]);
 
-  function validateField(field: string, value: number): string {
-    // Verifica se está vazio
-    if (!value || value === 0) {
-      return EMPTY_MESSAGES[field as keyof typeof EMPTY_MESSAGES] || `${field} é obrigatório`;
-    }
-
-    // Verifica ranges específicos
-    const ranges: Record<string, { min: number; max: number }> = {
-      weight: { min: 20, max: 300 },
-      height: { min: 50, max: 250 },
-      age: { min: 10, max: 100 },
-      waist: { min: 50, max: 200 },
-      neck: { min: 20, max: 60 },
-      hip: { min: 50, max: 200 },
-      resistance: { min: 100, max: 1000 },
-      reactance: { min: 10, max: 200 },
-      biceps: { min: 1, max: 100 },
-      triceps: { min: 1, max: 100 },
-      subscapular: { min: 1, max: 100 },
-      chest: { min: 1, max: 100 },
-      midaxillary: { min: 1, max: 100 },
-      abdominal: { min: 1, max: 100 },
-      suprailiac: { min: 1, max: 100 },
-      thigh: { min: 1, max: 100 },
-    };
-
-    const range = ranges[field];
-    if (range && (value < range.min || value > range.max)) {
-      return (
-        INVALID_MESSAGES[field as keyof typeof INVALID_MESSAGES] ||
-        `${field} deve ser entre ${range.min} e ${range.max}`
-      );
-    }
-
-    return '';
-  }
-
-  function handleNavyCalculate() {
+  function validateCommonFields(): Record<string, string> {
     const errs: Record<string, string> = {};
 
     const weightError = validateField('weight', commonData.weight);
@@ -244,6 +202,52 @@ export default function NewAssessment() {
     const ageError = validateField('age', commonData.age);
     if (ageError) errs.age = ageError;
 
+    const genderError = validateField('gender', commonData.gender);
+    if (genderError) errs.gender = genderError;
+
+    return errs;
+  }
+
+  function validateField(field: string, value: number | string): string {
+    if (field === 'gender') {
+      return !value || value === '' ? EMPTY_MESSAGES.gender : '';
+    }
+
+    const numValue = value as number;
+
+    if (!numValue || numValue === 0) {
+      return EMPTY_MESSAGES[field] ?? `${field} é obrigatório`;
+    }
+
+    const ranges: Record<string, { min: number; max: number }> = {
+      weight: { min: 20, max: 300 },
+      height: { min: 50, max: 250 },
+      age: { min: 10, max: 100 },
+      waist: { min: 50, max: 200 },
+      neck: { min: 20, max: 60 },
+      hip: { min: 50, max: 200 },
+      resistance: { min: 100, max: 1500 },
+      reactance: { min: 5, max: 300 },
+      biceps: { min: 1, max: 100 },
+      triceps: { min: 1, max: 100 },
+      subscapular: { min: 1, max: 100 },
+      chest: { min: 1, max: 100 },
+      midaxillary: { min: 1, max: 100 },
+      abdominal: { min: 1, max: 100 },
+      suprailiac: { min: 1, max: 100 },
+      thigh: { min: 1, max: 100 },
+    };
+
+    const range = ranges[field];
+    if (range && (numValue < range.min || numValue > range.max)) {
+      return INVALID_MESSAGES[field] ?? `${field} deve ser entre ${range.min} e ${range.max}`;
+    }
+
+    return '';
+  }
+
+  function handleNavyCalculate() {
+    const errs = validateCommonFields();
     const waistError = validateField('waist', specificData.waist);
     if (waistError) errs.waist = waistError;
 
@@ -263,6 +267,7 @@ export default function NewAssessment() {
     setErrors({});
     const navyData = {
       ...commonData,
+      gender: commonData.gender as 'male' | 'female',
       waist: specificData.waist,
       neck: specificData.neck,
       hip: specificData.hip,
@@ -272,16 +277,7 @@ export default function NewAssessment() {
   }
 
   function handleBioCalculate() {
-    const errs: Record<string, string> = {};
-
-    const weightError = validateField('weight', commonData.weight);
-    if (weightError) errs.weight = weightError;
-
-    const heightError = validateField('height', commonData.height);
-    if (heightError) errs.height = heightError;
-
-    const ageError = validateField('age', commonData.age);
-    if (ageError) errs.age = ageError;
+    const errs = validateCommonFields();
 
     const resistanceError = validateField('resistance', specificData.resistance);
     if (resistanceError) errs.resistance = resistanceError;
@@ -297,6 +293,7 @@ export default function NewAssessment() {
     setErrors({});
     const bioData = {
       ...commonData,
+      gender: commonData.gender as 'male' | 'female',
       resistance: specificData.resistance,
       reactance: specificData.reactance,
     };
@@ -305,16 +302,7 @@ export default function NewAssessment() {
   }
 
   function handleSkinfoldCalculate() {
-    const errs: Record<string, string> = {};
-
-    const weightError = validateField('weight', commonData.weight);
-    if (weightError) errs.weight = weightError;
-
-    const heightError = validateField('height', commonData.height);
-    if (heightError) errs.height = heightError;
-
-    const ageError = validateField('age', commonData.age);
-    if (ageError) errs.age = ageError;
+    const errs = validateCommonFields();
 
     const skinfoldData = { ...commonData, ...specificData };
     const requiredFields = getRequiredSkinfoldFields(skinfoldData as any);
@@ -335,16 +323,7 @@ export default function NewAssessment() {
   }
 
   function handleImcCalculate() {
-    const errs: Record<string, string> = {};
-
-    const weightError = validateField('weight', commonData.weight);
-    if (weightError) errs.weight = weightError;
-
-    const heightError = validateField('height', commonData.height);
-    if (heightError) errs.height = heightError;
-
-    const ageError = validateField('age', commonData.age);
-    if (ageError) errs.age = ageError;
+    const errs = validateCommonFields();
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -362,7 +341,6 @@ export default function NewAssessment() {
     if (name === 'protocol') {
       const newProtocol = value as 'jp3' | 'jp7' | 'dw4';
 
-      // descobre quais campos o novo protocolo NÃO usa
       const allSkinfoldFields = [
         'biceps',
         'triceps',
@@ -377,7 +355,6 @@ export default function NewAssessment() {
       const requiredFields = getRequiredSkinfoldFields(nextData as any);
       const removedFields = allSkinfoldFields.filter((f) => !requiredFields.includes(f as any));
 
-      // zera os removidos nos dados e nos inputs
       setSpecificData((prev) => {
         const updated = { ...prev, protocol: newProtocol };
         removedFields.forEach((f) => {
@@ -394,7 +371,6 @@ export default function NewAssessment() {
         return updated;
       });
 
-      // remove erros dos campos removidos
       setErrors((prev) => {
         const updated = { ...prev };
         removedFields.forEach((f) => {
@@ -406,7 +382,6 @@ export default function NewAssessment() {
     }
 
     if (name in specificData) {
-      // Limpa o erro do campo específico quando começa a digitar
       setErrors((prev) => ({ ...prev, [name]: '' }));
 
       const display = value.replace(',', '.');
@@ -684,21 +659,18 @@ export default function NewAssessment() {
 
     const fieldsToReset = PROTOCOL_FIELDS.jp3.toReset[gender];
 
-    // 1. Reseta os valores numéricos
     setSpecificData((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => (updated[field] = 0));
       return updated;
     });
 
-    // 2. Reseta os inputs (strings vazias)
     setSpecificInputValues((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => (updated[field] = ''));
       return updated;
     });
 
-    // 3. Limpa erros
     setErrors((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => delete updated[field]);
@@ -742,9 +714,12 @@ export default function NewAssessment() {
                 inputValues={getNavyInputValues()}
                 errors={errors}
                 handleChange={(e) => {
-                  if (e.target.name === 'gender') {
+                  const { name, value } = e.target;
+                  setErrors((prev) => ({ ...prev, [name]: '' }));
+
+                  if (name === 'gender') {
                     handleCommonChange(e);
-                    if (e.target.value === 'male') {
+                    if (value === 'male') {
                       setSpecificData((prev) => ({ ...prev, hip: 0 }));
                       setSpecificInputValues((prev) => ({ ...prev, hip: '' }));
                       setErrors((prev) => {
@@ -755,7 +730,7 @@ export default function NewAssessment() {
                     }
                     return;
                   }
-                  if (['waist', 'neck', 'hip'].includes(e.target.name)) {
+                  if (['waist', 'neck', 'hip'].includes(name)) {
                     handleSpecificChange(e);
                   } else {
                     handleCommonChange(e);
@@ -778,6 +753,7 @@ export default function NewAssessment() {
                 inputValues={getBioInputValues()}
                 errors={errors}
                 handleChange={(e) => {
+                  setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
                   if (['resistance', 'reactance'].includes(e.target.name)) {
                     handleSpecificChange(e);
                   } else {
@@ -796,14 +772,13 @@ export default function NewAssessment() {
                 errors={errors}
                 handleChange={(e) => {
                   const { name, value } = e.target;
+                  setErrors((prev) => ({ ...prev, [name]: '' }));
 
                   if (name === 'gender') {
                     handleCommonChange(e);
                     resetSkinfoldFields(value as 'male' | 'female', specificData.protocol);
                     return;
                   }
-
-                  // Lista de campos que pertencem ao SpecificChange
                   const isSkinfoldField = [
                     'protocol',
                     'biceps',
@@ -815,7 +790,6 @@ export default function NewAssessment() {
                     'suprailiac',
                     'thigh',
                   ].includes(name);
-
                   if (isSkinfoldField) {
                     handleSpecificChange(e);
                   } else {
@@ -832,7 +806,10 @@ export default function NewAssessment() {
                 data={{ ...commonData, waist: 0, neck: 0, hip: 0 } as NavyAssessmentInput}
                 inputValues={getImcInputValues()}
                 errors={errors}
-                handleChange={handleCommonChange}
+                handleChange={(e) => {
+                  setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+                  handleCommonChange(e);
+                }}
                 handleCalculate={handleImcCalculate}
                 handleReset={handleReset}
               />

@@ -20,7 +20,7 @@ const INITIAL_COMMON: BaseAssessmentInput = {
   weight: 0,
   height: 0,
   age: 0,
-  gender: 'male',
+  gender: '',
   activityLevel: 'sedentary',
   objective: 'maintenance',
 };

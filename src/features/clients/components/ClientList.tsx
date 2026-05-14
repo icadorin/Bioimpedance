@@ -4,11 +4,12 @@ import EmptyClients from './EmptyClients';
 
 interface Props {
   clients: Client[];
+  onNewClient?: () => void;
 }
 
-export default function ClientList({ clients }: Props) {
+export default function ClientList({ clients, onNewClient }: Props) {
   if (!clients.length) {
-    return <EmptyClients />;
+    return <EmptyClients onNewClient={onNewClient || (() => {})} />;
   }
 
   return (
