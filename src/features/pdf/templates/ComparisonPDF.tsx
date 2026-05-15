@@ -22,20 +22,13 @@ const palette = {
 };
 
 const theme = {
-  // ─────────────────────────
   // BRAND
-  // ─────────────────────────
-
   primary: palette.purple8,
-
   separator: palette.purple7,
 
-  // ─────────────────────────
   // ACCENT
-  // ─────────────────────────
-
   accentBg: '#f6f3ff',
-  accentBgHover: '#efe9ff',
+  accentBgHover: '#d3c6fd',
 
   accentBgDark: palette.purple2,
   accentBgStrong: palette.purple4,
@@ -45,40 +38,25 @@ const theme = {
   accentTextLight: palette.purple12,
   accentTextDark: palette.purple5,
 
-  // ─────────────────────────
   // BASE
-  // ─────────────────────────
-
   bg: '#fcfcfd',
   surface: '#ffffff',
 
-  // ─────────────────────────
   // TEXT
-  // ─────────────────────────
-
   text: '#16131d',
   textSoft: '#625f6b',
   textMuted: '#8d8899',
 
-  // ─────────────────────────
   // BORDER
-  // ─────────────────────────
-
   border: '#ece8f5',
 
-  // ─────────────────────────
   // STATUS
-  // ─────────────────────────
-
   success: '#16A34A',
   danger: '#DC2626',
   warning: '#F59E0B',
 };
 
-// ─────────────────────────────────────────────
 // ESTILOS BASE (REUTILIZÁVEIS)
-// ─────────────────────────────────────────────
-
 const cardAccent = {
   backgroundColor: theme.accentBg,
   borderRadius: 3,
@@ -92,10 +70,7 @@ const accentLeftBorder = {
   borderBottomWidth: 0,
 };
 
-// ─────────────────────────────────────────────
 // STYLES
-// ─────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   page: {
     backgroundColor: theme.bg,
@@ -189,18 +164,23 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  dividerFade: {
+  dividerFadeOuter: {
     flex: 1,
     height: 1,
-    backgroundColor: palette.purple7,
-    opacity: 0.08,
+    backgroundColor: palette.purple6,
+    opacity: 0.05,
+  },
+
+  dividerFadeMid: {
+    flex: 2,
+    height: 1,
+    backgroundColor: palette.purple11,
   },
 
   dividerCenter: {
-    flex: 4,
-    height: 2,
-    backgroundColor: palette.purple7,
-    borderRadius: 999,
+    flex: 5,
+    height: 1,
+    backgroundColor: palette.purple6,
   },
 
   // ─── HERO STATS ───
@@ -337,6 +317,7 @@ const styles = StyleSheet.create({
     ...accentLeftBorder,
     paddingVertical: 14,
     paddingHorizontal: 16,
+    minHeight: 60,
     marginTop: 8,
     marginBottom: 16,
   },
@@ -398,10 +379,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// ─────────────────────────────────────────────
 // COMPONENTE
-// ─────────────────────────────────────────────
-
 interface Props {
   assessment: Assessment;
   client: Client;
@@ -463,9 +441,11 @@ export default function AssessmentPDF({ assessment, client }: Props) {
 
           {/* DIVISOR */}
           <View style={styles.dividerRow}>
-            <View style={styles.dividerFade} />
+            <View style={styles.dividerFadeOuter} />
+            <View style={styles.dividerFadeMid} />
             <View style={styles.dividerCenter} />
-            <View style={styles.dividerFade} />
+            <View style={styles.dividerFadeMid} />
+            <View style={styles.dividerFadeOuter} />
           </View>
 
           {/* CARDS PRINCIPAIS */}
@@ -573,8 +553,11 @@ export default function AssessmentPDF({ assessment, client }: Props) {
 
           {/* CLASSIFICAÇÃO */}
           {!isImcOnly &&
+            assessment.results.bodyFat &&
+            assessment.results.bodyFat > 0 &&
             assessment.results.bodyFatLevel &&
-            assessment.results.bodyFatLevel !== '—' && (
+            assessment.results.bodyFatLevel !== '—' &&
+            assessment.results.bodyFatLevel !== 'Sem dados' && (
               <View style={[styles.bottomCard, { borderLeftColor: bodyFatColor }]}>
                 <View style={styles.bottomCardRow}>
                   <View style={[styles.bottomCardDot, { backgroundColor: bodyFatColor }]} />
@@ -588,7 +571,6 @@ export default function AssessmentPDF({ assessment, client }: Props) {
               </View>
             )}
 
-          {/* OBSERVAÇÕES */}
           {/* OBSERVAÇÕES */}
           {assessment.observations && (
             <View style={styles.bottomCard}>
