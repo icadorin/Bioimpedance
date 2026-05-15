@@ -9,7 +9,7 @@ interface Props {
 
 export default function ClientActions({ clientId }: Props) {
   const navigate = useNavigate();
-  const { generateAssessmentPDF, isGenerating } = usePDFGenerator();
+  const { generateComparisonPDF, isGenerating } = usePDFGenerator();
   const { getClientById, getClientAssessments } = useClients();
 
   function handleProfile() {
@@ -24,14 +24,20 @@ export default function ClientActions({ clientId }: Props) {
     const client = getClientById(clientId);
     const assessments = getClientAssessments(clientId);
     const lastAssessment = assessments[0];
+    const previousAssessment = assessments[1];
 
     if (!client || !lastAssessment) {
       alert('Nenhuma avaliação encontrada para gerar PDF.');
       return;
     }
 
+    if (!previousAssessment) {
+      alert('São necessárias pelo menos 2 avaliações para gerar uma comparação.');
+      return;
+    }
+
     try {
-      await generateAssessmentPDF(lastAssessment, client);
+      await generateComparisonPDF(client, lastAssessment, previousAssessment);
     } catch (error) {
       alert('Erro ao gerar PDF.');
     }

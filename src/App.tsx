@@ -6,6 +6,7 @@ import Dashboard from './features/dashboard/pages/Dashboard';
 import NewAssessment from './features/assessment/pages/NewAssessment';
 import Clients from './features/clients/pages/Clients';
 import ClientProfile from './features/clients/pages/ClientProfile';
+import PDFPreview from './features/pdf/pages/PDFPreview';
 import Settings from './pages/Settings';
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
             <Route path={ROUTES.newAssessmentWithClient} element={<NewAssessment />} />
             <Route path={ROUTES.clients} element={<Clients />} />
             <Route path={ROUTES.clientProfile} element={<ClientProfile />} />
+            <Route path={ROUTES.pdfs} element={<PDFPreview />} />
             <Route
               path="/settings"
               element={<Settings theme={theme} onToggleTheme={toggleTheme} />}

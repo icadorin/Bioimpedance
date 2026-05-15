@@ -9,7 +9,7 @@ interface Props {
 
 export default function ClientQuickActions({ clientId }: Props) {
   const navigate = useNavigate();
-  const { generateAssessmentPDF, isGenerating } = usePDFGenerator();
+  const { generateComparisonPDF, isGenerating } = usePDFGenerator();
   const { getClientById, getClientAssessments } = useClients();
 
   const handleNewAssessment = () => {
@@ -20,14 +20,20 @@ export default function ClientQuickActions({ clientId }: Props) {
     const client = getClientById(clientId);
     const assessments = getClientAssessments(clientId);
     const lastAssessment = assessments[0];
+    const previousAssessment = assessments[1]; // Pega a penúltima avaliação
 
     if (!client || !lastAssessment) {
       alert('Cliente ou avaliação não encontrada.');
       return;
     }
 
+    if (!previousAssessment) {
+      alert('É necessário ter pelo menos 2 avaliações para gerar uma comparação.');
+      return;
+    }
+
     try {
-      await generateAssessmentPDF(lastAssessment, client);
+      await generateComparisonPDF(client, lastAssessment, previousAssessment);
     } catch (error) {
       alert('Erro ao gerar PDF. Tente novamente.');
     }
@@ -39,7 +45,7 @@ export default function ClientQuickActions({ clientId }: Props) {
       <PDFButton
         onClick={handleGeneratePDF}
         isLoading={isGenerating}
-        label="Gerar PDF da Última Avaliação"
+        label="Gerar PDF Comparativo"
         variant="secondary"
         size="md"
       />
