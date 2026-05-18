@@ -1,36 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
 :root {
-  --bg: #0f1115;
-  --panel: #161a22;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --border: #262b36;
-  --accent: #54399e;
-  --accent-hover: #9575cd;
-  --input-bg: #0f131a;
-  --radius: 12px;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  --item-hover: rgba(36, 39, 46, 0.5);
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --bg: hsl(240, 20%, 7%);
+  --panel: hsl(240, 18%, 12%);
+  --text: hsl(240, 10%, 98%);
+  --muted: hsl(240, 12%, 65%);
+  --border: hsl(240, 18%, 20%);
+  --accent: hsl(245, 45%, 58%);
+  --accent-hover: hsl(245, 55%, 68%);
+  --highlight-icon: hsl(270, 54%, 55%);
+  --input-bg: hsl(240, 20%, 10%);
+  --radius: 0.3rem;
+  --shadow: 0 10px 30px hsla(240, 30%, 5%, 0.5);
+  --item-hover: hsl(240, 18%, 18%);
+
+  --success: hsl(158, 45%, 52%);
+  --warning: hsl(44, 70%, 58%);
+  --danger: hsl(0, 65%, 58%);
 
   font-family:
+    'Inter',
     system-ui,
     -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
     sans-serif;
 }
 
 body.light {
-  --bg: #f8fafc;
-  --panel: #ffffff;
-  --text: #1e293b;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --accent: #4c3672;
-  --accent-hover: #4c2b85;
-  --input-bg: #f1f5f9;
-  --shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
-  --item-hover: #f1f5f9;
+  --bg: hsl(240, 18%, 98%);
+  --panel: hsl(0, 0%, 100%);
+  --text: hsl(240, 25%, 12%);
+  --muted: hsl(240, 15%, 50%);
+  --border: hsl(240, 18%, 88%);
+  --accent: hsl(245, 50%, 52%);
+  --accent-hover: hsl(245, 55%, 42%);
+  --highlight-icon: hsl(245, 45%, 54%);
+  --input-bg: hsl(0, 0%, 99%);
+  --shadow: 0 10px 40px hsla(240, 25%, 10%, 0.08);
+  --item-hover: hsl(240, 20%, 94%);
 }
 
 body.theme-transitioning {
@@ -153,7 +161,7 @@ button:hover {
 }
 
 .btn-secondary:hover {
-  background: var(--border) !important;
+  background: var(--item-hover) !important;
 }
 
 .field-label {
@@ -198,30 +206,23 @@ small {
   border-radius: 10px;
 }
 .content::-webkit-scrollbar-thumb {
-  background: #9f7dff;
+  background: var(--accent);
   border-radius: 10px;
 }
 .content::-webkit-scrollbar-thumb:hover {
-  background: #c4b5fd;
-}
-body.light .content::-webkit-scrollbar-thumb {
-  background: #4c3672;
-}
-.content {
-  scrollbar-width: thin;
-  scrollbar-color: #9f7dff var(--panel);
-}
-body.light .content {
-  scrollbar-color: #4c3672 var(--panel);
+  background: var(--accent-hover);
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+body.light .content::-webkit-scrollbar-thumb {
+  background: var(--accent);
+}
+
+.content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--panel);
+}
+body.light .content {
+  scrollbar-color: var(--accent) var(--panel);
 }
 
 @keyframes spin {
