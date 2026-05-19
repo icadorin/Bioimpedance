@@ -18,7 +18,6 @@ export default function ImcCalculator({
   errors,
   handleChange,
   handleCalculate,
-  handleReset,
 }: ImcCalculatorProps) {
   return (
     <div className="form">
@@ -26,9 +25,6 @@ export default function ImcCalculator({
 
       <div className="form-actions">
         <button onClick={handleCalculate}>Calcular</button>
-        <button className="btn-secondary" onClick={handleReset}>
-          Resetar
-        </button>
       </div>
     </div>
   );

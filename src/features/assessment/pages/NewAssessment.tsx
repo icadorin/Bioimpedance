@@ -68,14 +68,11 @@ type Result = {
 };
 
 type SpecificData = {
-  // Navy
   waist: number;
   neck: number;
   hip: number;
-  // Bio
   resistance: number;
   reactance: number;
-  // Skinfold
   protocol: 'jp3' | 'jp7' | 'dw4';
   biceps: number;
   triceps: number;
@@ -180,12 +177,7 @@ export default function NewAssessment() {
         activityLevel: 'moderate',
         objective: 'maintenance',
       });
-
-      setCommonInputValues({
-        weight: '',
-        height: '',
-        age: '',
-      });
+      setCommonInputValues({ weight: '', height: '', age: '' });
     } else {
       resetAll();
       setSpecificData({ ...INITIAL_SPECIFIC });
@@ -194,17 +186,12 @@ export default function NewAssessment() {
   }, [clientId]);
 
   function handleSaveAssessment() {
-    if (!currentResult) {
-      alert('Calcule a avaliação antes de salvar.');
-      return;
-    }
-
+    if (!currentResult) return;
     if (!commonData.gender || !commonData.weight || !commonData.height || !commonData.age) {
       alert('Preencha todos os campos obrigatórios antes de salvar.');
       return;
     }
 
-    // Monta os dados específicos baseado no método
     const specificData_mapped: any = {};
 
     if (method === 'navy') {
@@ -262,26 +249,19 @@ export default function NewAssessment() {
     });
 
     setSavedMessage(`Avaliação salva com sucesso! (${newAssessment.date})`);
-
-    // Limpa a mensagem após 5 segundos
     setTimeout(() => setSavedMessage(''), 5000);
   }
 
   function validateCommonFields(): Record<string, string> {
     const errs: Record<string, string> = {};
-
     const weightError = validateField('weight', commonData.weight);
     if (weightError) errs.weight = weightError;
-
     const heightError = validateField('height', commonData.height);
     if (heightError) errs.height = heightError;
-
     const ageError = validateField('age', commonData.age);
     if (ageError) errs.age = ageError;
-
     const genderError = validateField('gender', commonData.gender);
     if (genderError) errs.gender = genderError;
-
     return errs;
   }
 
@@ -289,13 +269,10 @@ export default function NewAssessment() {
     if (field === 'gender') {
       return !value || value === '' ? EMPTY_MESSAGES.gender : '';
     }
-
     const numValue = value as number;
-
     if (!numValue || numValue === 0) {
       return EMPTY_MESSAGES[field] ?? `${field} é obrigatório`;
     }
-
     const ranges: Record<string, { min: number; max: number }> = {
       weight: { min: 20, max: 300 },
       height: { min: 50, max: 250 },
@@ -314,12 +291,10 @@ export default function NewAssessment() {
       suprailiac: { min: 1, max: 100 },
       thigh: { min: 1, max: 100 },
     };
-
     const range = ranges[field];
     if (range && (numValue < range.min || numValue > range.max)) {
       return INVALID_MESSAGES[field] ?? `${field} deve ser entre ${range.min} e ${range.max}`;
     }
-
     return '';
   }
 
@@ -327,20 +302,16 @@ export default function NewAssessment() {
     const errs = validateCommonFields();
     const waistError = validateField('waist', specificData.waist);
     if (waistError) errs.waist = waistError;
-
     const neckError = validateField('neck', specificData.neck);
     if (neckError) errs.neck = neckError;
-
     if (commonData.gender === 'female') {
       const hipError = validateField('hip', specificData.hip);
       if (hipError) errs.hip = hipError;
     }
-
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-
     setErrors({});
     const navyData = {
       ...commonData,
@@ -349,24 +320,19 @@ export default function NewAssessment() {
       neck: specificData.neck,
       hip: specificData.hip,
     };
-    const result = calcNavy(navyData as NavyAssessmentInput);
-    setCurrentResult(result);
+    setCurrentResult(calcNavy(navyData as NavyAssessmentInput));
   }
 
   function handleBioCalculate() {
     const errs = validateCommonFields();
-
     const resistanceError = validateField('resistance', specificData.resistance);
     if (resistanceError) errs.resistance = resistanceError;
-
     const reactanceError = validateField('reactance', specificData.reactance);
     if (reactanceError) errs.reactance = reactanceError;
-
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-
     setErrors({});
     const bioData = {
       ...commonData,
@@ -374,50 +340,39 @@ export default function NewAssessment() {
       resistance: specificData.resistance,
       reactance: specificData.reactance,
     };
-    const result = calcBio(bioData as BioimpedanceInput);
-    setCurrentResult(result);
+    setCurrentResult(calcBio(bioData as BioimpedanceInput));
   }
 
   function handleSkinfoldCalculate() {
     const errs = validateCommonFields();
-
     const skinfoldData = { ...commonData, ...specificData };
     const requiredFields = getRequiredSkinfoldFields(skinfoldData as any);
-
     requiredFields.forEach((field: string) => {
       const error = validateField(field, specificData[field as keyof SpecificData] as number);
       if (error) errs[field] = error;
     });
-
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-
     setErrors({});
-    const result = calcSkinfold(skinfoldData);
-    setCurrentResult(result);
+    setCurrentResult(calcSkinfold(skinfoldData));
   }
 
   function handleImcCalculate() {
     const errs = validateCommonFields();
-
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-
     setErrors({});
-    const result = calcImc();
-    setCurrentResult(result);
+    setCurrentResult(calcImc());
   }
 
   function handleSpecificChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
-
     if (name === 'protocol') {
       const newProtocol = value as 'jp3' | 'jp7' | 'dw4';
-
       const allSkinfoldFields = [
         'biceps',
         'triceps',
@@ -431,7 +386,6 @@ export default function NewAssessment() {
       const nextData = { ...commonData, ...specificData, protocol: newProtocol };
       const requiredFields = getRequiredSkinfoldFields(nextData as any);
       const removedFields = allSkinfoldFields.filter((f) => !requiredFields.includes(f as any));
-
       setSpecificData((prev) => {
         const updated = { ...prev, protocol: newProtocol };
         removedFields.forEach((f) => {
@@ -439,7 +393,6 @@ export default function NewAssessment() {
         });
         return updated;
       });
-
       setSpecificInputValues((prev) => {
         const updated = { ...prev };
         removedFields.forEach((f) => {
@@ -447,7 +400,6 @@ export default function NewAssessment() {
         });
         return updated;
       });
-
       setErrors((prev) => {
         const updated = { ...prev };
         removedFields.forEach((f) => {
@@ -457,13 +409,10 @@ export default function NewAssessment() {
       });
       return;
     }
-
     if (name in specificData) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
-
       const display = value.replace(',', '.');
       if (!/^\d*\.?\d*$/.test(display)) return;
-
       setSpecificInputValues((prev) => ({ ...prev, [name]: value }));
       setSpecificData((prev) => ({ ...prev, [name]: parseDecimal(value) }));
     }
@@ -486,7 +435,6 @@ export default function NewAssessment() {
     const recommendation = generateRecommendation(data, tdee, bodyFat);
     const navyBase =
       data.gender === 'male' ? data.waist - data.neck : data.waist + data.hip - data.neck;
-
     return {
       imc,
       bmr,
@@ -535,7 +483,6 @@ export default function NewAssessment() {
     const impedance = calculateBioImpedance(data);
     const phaseAngle = calculatePhaseAngle(data);
     const tbw = calculateTBW(data);
-
     return {
       imc,
       bmr,
@@ -594,7 +541,6 @@ export default function NewAssessment() {
         : data.protocol === 'jp7'
           ? 'Jackson-Pollock 7 dobras'
           : 'Durnin-Womersley 4 dobras';
-
     return {
       imc,
       bmr,
@@ -640,7 +586,6 @@ export default function NewAssessment() {
     const tdee = calculateTDEE(data, bmr);
     const imc = calculateIMC(data);
     const recommendation = generateRecommendation(data, tdee, 0);
-
     return {
       imc,
       bmr,
@@ -675,20 +620,17 @@ export default function NewAssessment() {
     };
   }
 
-  // Funções helper para inputValues
   const getNavyInputValues = () => ({
     ...commonInputValues,
     waist: specificInputValues.waist || '',
     neck: specificInputValues.neck || '',
     hip: specificInputValues.hip || '',
   });
-
   const getBioInputValues = () => ({
     ...commonInputValues,
     resistance: specificInputValues.resistance || '',
     reactance: specificInputValues.reactance || '',
   });
-
   const getSkinfoldInputValues = () => ({
     ...commonInputValues,
     biceps: specificInputValues.biceps || '',
@@ -700,13 +642,7 @@ export default function NewAssessment() {
     suprailiac: specificInputValues.suprailiac || '',
     thigh: specificInputValues.thigh || '',
   });
-
-  const getImcInputValues = () => ({
-    ...commonInputValues,
-    waist: '',
-    neck: '',
-    hip: '',
-  });
+  const getImcInputValues = () => ({ ...commonInputValues, waist: '', neck: '', hip: '' });
 
   function handleReset() {
     setErrors({});
@@ -727,27 +663,22 @@ export default function NewAssessment() {
       suprailiac: '',
       thigh: '',
     });
-
     resetAll();
   }
 
   const resetSkinfoldFields = (gender: 'male' | 'female', protocol: string) => {
     if (protocol !== 'jp3') return;
-
     const fieldsToReset = PROTOCOL_FIELDS.jp3.toReset[gender];
-
     setSpecificData((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => (updated[field] = 0));
       return updated;
     });
-
     setSpecificInputValues((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => (updated[field] = ''));
       return updated;
     });
-
     setErrors((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => delete updated[field]);
@@ -755,30 +686,87 @@ export default function NewAssessment() {
     });
   };
 
+  const handleNavyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (name === 'gender') {
+      handleCommonChange(e);
+      if (value === 'male') {
+        setSpecificData((prev) => ({ ...prev, hip: 0 }));
+        setSpecificInputValues((prev) => ({ ...prev, hip: '' }));
+        setErrors((prev) => {
+          const u = { ...prev };
+          delete u.hip;
+          return u;
+        });
+      }
+      return;
+    }
+    if (['waist', 'neck', 'hip'].includes(name)) handleSpecificChange(e);
+    else handleCommonChange(e);
+  };
+
+  const handleBioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+    if (['resistance', 'reactance'].includes(e.target.name)) handleSpecificChange(e);
+    else handleCommonChange(e);
+  };
+
+  const handleSkinfoldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (name === 'gender') {
+      handleCommonChange(e);
+      resetSkinfoldFields(value as 'male' | 'female', specificData.protocol);
+      return;
+    }
+    const isSkinfoldField = [
+      'protocol',
+      'biceps',
+      'triceps',
+      'subscapular',
+      'chest',
+      'midaxillary',
+      'abdominal',
+      'suprailiac',
+      'thigh',
+    ].includes(name);
+    if (isSkinfoldField) handleSpecificChange(e);
+    else handleCommonChange(e);
+  };
+
   return (
     <div className="container">
-      <h1>Nova Avaliação</h1>
+      {/* ── Page header ── */}
+      <div className="assessment-page-header">
+        <h1>Nova Avaliação</h1>
+        <div className="assessment-header-controls">
+          <div className="method-selector-inline">
+            <InputField
+              type="select"
+              label="Método"
+              name="method"
+              value={method}
+              options={methodOptions}
+              onChange={(e) => {
+                setMethod(e.target.value as AssessmentMethod);
+                setCurrentResult(null);
+                setErrors({});
+              }}
+            />
+          </div>
+          <button className="btn-secondary btn-reset" onClick={handleReset}>
+            Resetar
+          </button>
+        </div>
+      </div>
 
       {selectedClient && <ClientContextBar client={selectedClient} />}
 
-      <div className="assessment-toolbar">
-        <div className="method-selector-inline">
-          <InputField
-            type="select"
-            label="Método de avaliação"
-            name="method"
-            value={method}
-            options={methodOptions}
-            onChange={(e) => setMethod(e.target.value as AssessmentMethod)}
-          />
-        </div>
-        <button className="btn-reset-all btn-secondary" onClick={handleReset}>
-          Resetar
-        </button>
-      </div>
-
+      {/* ── Main card ── */}
       <div className="main-calculator-card">
         <div className="calculator-layout">
+          {/* Left: form */}
           <div className="left-panel">
             {method === 'navy' && (
               <NavyCalculator
@@ -790,34 +778,11 @@ export default function NewAssessment() {
                 }}
                 inputValues={getNavyInputValues()}
                 errors={errors}
-                handleChange={(e) => {
-                  const { name, value } = e.target;
-                  setErrors((prev) => ({ ...prev, [name]: '' }));
-
-                  if (name === 'gender') {
-                    handleCommonChange(e);
-                    if (value === 'male') {
-                      setSpecificData((prev) => ({ ...prev, hip: 0 }));
-                      setSpecificInputValues((prev) => ({ ...prev, hip: '' }));
-                      setErrors((prev) => {
-                        const u = { ...prev };
-                        delete u.hip;
-                        return u;
-                      });
-                    }
-                    return;
-                  }
-                  if (['waist', 'neck', 'hip'].includes(name)) {
-                    handleSpecificChange(e);
-                  } else {
-                    handleCommonChange(e);
-                  }
-                }}
+                handleChange={handleNavyChange}
                 handleCalculate={handleNavyCalculate}
                 handleReset={handleReset}
               />
             )}
-
             {method === 'bioimpedance' && (
               <BioimpedanceCalculator
                 data={
@@ -829,55 +794,21 @@ export default function NewAssessment() {
                 }
                 inputValues={getBioInputValues()}
                 errors={errors}
-                handleChange={(e) => {
-                  setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
-                  if (['resistance', 'reactance'].includes(e.target.name)) {
-                    handleSpecificChange(e);
-                  } else {
-                    handleCommonChange(e);
-                  }
-                }}
+                handleChange={handleBioChange}
                 handleCalculate={handleBioCalculate}
                 handleReset={handleReset}
               />
             )}
-
             {method === 'skinfold' && (
               <SkinfoldCalculator
                 data={{ ...commonData, ...specificData }}
                 inputValues={getSkinfoldInputValues()}
                 errors={errors}
-                handleChange={(e) => {
-                  const { name, value } = e.target;
-                  setErrors((prev) => ({ ...prev, [name]: '' }));
-
-                  if (name === 'gender') {
-                    handleCommonChange(e);
-                    resetSkinfoldFields(value as 'male' | 'female', specificData.protocol);
-                    return;
-                  }
-                  const isSkinfoldField = [
-                    'protocol',
-                    'biceps',
-                    'triceps',
-                    'subscapular',
-                    'chest',
-                    'midaxillary',
-                    'abdominal',
-                    'suprailiac',
-                    'thigh',
-                  ].includes(name);
-                  if (isSkinfoldField) {
-                    handleSpecificChange(e);
-                  } else {
-                    handleCommonChange(e);
-                  }
-                }}
+                handleChange={handleSkinfoldChange}
                 handleCalculate={handleSkinfoldCalculate}
                 handleReset={handleReset}
               />
             )}
-
             {method === 'imc' && (
               <ImcCalculator
                 data={{ ...commonData, waist: 0, neck: 0, hip: 0 } as NavyAssessmentInput}
@@ -891,76 +822,35 @@ export default function NewAssessment() {
                 handleReset={handleReset}
               />
             )}
-
-            <div className="assessment-notes">
-              <label className="field-label">Observações</label>
-              <textarea
-                value={assessmentNotes}
-                onChange={(e) => setAssessmentNotes(e.target.value)}
-                placeholder="Observações sobre a avaliação (opcional)"
-                rows={4}
-                maxLength={500}
-              />
-              <small className="notes-counter">{assessmentNotes.length}/500</small>
-            </div>
-
-            {savedMessage && (
-              <div
-                style={{
-                  padding: '12px 32px',
-                  marginTop: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    background: 'rgba(34, 197, 94, 0.15)',
-                    border: '1px solid rgba(34, 197, 94, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    color: '#22c55e',
-                    fontWeight: 500,
-                  }}
-                >
-                  {savedMessage}
-                </div>
-              </div>
-            )}
-
-            {currentResult && (
-              <div
-                style={{
-                  padding: '0 32px 32px',
-                  marginTop: '8px',
-                }}
-              >
-                <button
-                  onClick={handleSaveAssessment}
-                  style={{
-                    width: '100%',
-                    background: '#22c55e',
-                    fontSize: '16px',
-                    padding: '14px',
-                  }}
-                >
-                  Salvar Avaliação
-                </button>
-                {clientId && (
-                  <p
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--muted)',
-                      fontSize: '12px',
-                      marginTop: '8px',
-                    }}
-                  >
-                    Será vinculada ao cliente atual
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
+          {/* Right: results */}
           <ResultCards result={currentResult} method={method} />
+        </div>
+
+        {/* ── Card footer: notes + save ── */}
+        <div className="assessment-footer">
+          <div className="assessment-notes">
+            <label className="field-label">Observações</label>
+            <textarea
+              value={assessmentNotes}
+              onChange={(e) => setAssessmentNotes(e.target.value)}
+              placeholder="Observações sobre a avaliação (opcional)"
+              rows={3}
+              maxLength={500}
+            />
+            <small className="notes-counter">{assessmentNotes.length}/500</small>
+          </div>
+
+          <div className="assessment-save-area">
+            {savedMessage && <div className="save-success-message">{savedMessage}</div>}
+            <div className="save-btn-wrapper">
+              <button onClick={handleSaveAssessment} disabled={!currentResult} className="btn-save">
+                Salvar Avaliação
+              </button>
+            </div>
+            {clientId && <p className="save-hint">Será vinculada ao cliente atual</p>}
+          </div>
         </div>
       </div>
     </div>

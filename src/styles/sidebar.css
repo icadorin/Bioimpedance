@@ -18,26 +18,36 @@ nav {
 
 .sidebar-footer {
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: 14px;
+  margin-bottom: 5px;
   border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
 }
 
 .sidebar.collapsed {
   width: 70px;
 }
 
+/* ITENS DA SIDEBAR */
+
 .sidebar .item {
   display: flex;
   position: relative;
   align-items: center;
   box-sizing: border-box;
+  font-size: 15px;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 0.3rem;
   cursor: pointer;
   white-space: nowrap;
-  min-height: 44px;
+  min-height: 35px;
   transition: background 0.2s ease;
+}
+
+.sidebar .item:hover {
+  background: var(--item-hover);
 }
 
 .sidebar .item span {
@@ -58,8 +68,10 @@ nav {
   overflow: hidden;
 }
 
+/* ESTADO ACTIVE - NEUTRO */
+
 .sidebar .item.active {
-  background: rgba(97, 57, 165, 0.2);
+  background: hsla(245, 45%, 58%, 0.15);
   position: relative;
 }
 
@@ -71,18 +83,8 @@ nav {
   transform: translateY(-50%);
   width: 4px;
   height: 60%;
-  background: #6139a5;
+  background: var(--highlight-icon);
   border-radius: 0 4px 4px 4px;
-}
-
-.sidebar .item:hover {
-  background: var(--item-hover);
-}
-
-.sidebar .item svg {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
 }
 
 .sidebar .toggle {
@@ -95,11 +97,9 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 44px;
   height: 44px;
-  border-radius: 10px;
-
+  border-radius: var(--radius);
   transition:
     background 0.2s ease,
     transform 0.2s ease;
@@ -131,6 +131,30 @@ nav {
   height: 28px;
 }
 
+/* ÍCONES DA SIDEBAR */
+
+.sidebar .item svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+  transition: color 0.25s ease;
+}
+
+.sidebar.collapsed .item svg {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+}
+
+.sidebar .item:hover svg {
+  color: var(--text);
+}
+
+.sidebar .item.active svg {
+  color: var(--highlight-icon);
+}
+
 .mobileMenuBtn {
   position: fixed;
   top: 16px;
@@ -149,27 +173,23 @@ nav {
   animation: fadeIn 0.3s ease forwards;
 }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  text-align: center;
-}
-
 .developed-by {
-  font-size: 12px;
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--muted);
-  padding: 8px 12px;
-  line-height: 1.4;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   opacity: 1;
-  transition: opacity 0.2s ease 0.3s;
+  transition:
+    opacity 0.2s ease 0.3s,
+    background 0.2s ease;
 }
 
 .developed-by strong {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .sidebar.collapsed .developed-by {

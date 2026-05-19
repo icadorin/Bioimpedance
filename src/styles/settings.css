@@ -51,11 +51,16 @@
 .lang-btn:hover {
   border-color: var(--accent) !important;
   color: var(--text) !important;
-  opacity: 1 !important;
+  background: var(--item-hover) !important;
 }
 
 .lang-btn.active {
   border-color: var(--accent) !important;
-  background: rgba(97, 57, 165, 0.12) !important;
+  background: hsla(245, 45%, 58%, 0.12) !important;
   color: var(--text) !important;
+  box-shadow: 0 0 0 1px hsla(245, 45%, 58%, 0.25) inset;
+}
+
+.lang-btn.active.soft {
+  background: hsla(245, 35%, 55%, 0.08) !important;
 }

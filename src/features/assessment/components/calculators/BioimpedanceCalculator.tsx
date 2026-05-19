@@ -18,7 +18,6 @@ export default function BioimpedanceCalculator({
   errors,
   handleChange,
   handleCalculate,
-  handleReset,
 }: BioimpedanceCalculatorProps) {
   return (
     <div className="form">
@@ -52,9 +51,6 @@ export default function BioimpedanceCalculator({
 
       <div className="form-actions">
         <button onClick={handleCalculate}>Calcular</button>
-        <button className="btn-secondary" onClick={handleReset}>
-          Resetar
-        </button>
       </div>
     </div>
   );

@@ -19,7 +19,6 @@ export default function NavyCalculator({
   errors,
   handleChange,
   handleCalculate,
-  handleReset,
 }: NavyCalculatorProps) {
   return (
     <div className="form">
@@ -66,9 +65,6 @@ export default function NavyCalculator({
 
       <div className="form-actions">
         <button onClick={handleCalculate}>Calcular</button>
-        <button className="btn-secondary" onClick={handleReset}>
-          Resetar
-        </button>
       </div>
     </div>
   );

@@ -37,7 +37,6 @@ export default function SkinfoldCalculator({
   errors,
   handleChange,
   handleCalculate,
-  handleReset,
 }: SkinfoldCalculatorProps) {
   const skinfoldFields = getRequiredSkinfoldFields(data).map((f) => SKINFOLD_FIELDS[f]);
 
@@ -74,9 +73,6 @@ export default function SkinfoldCalculator({
 
       <div className="form-actions">
         <button onClick={handleCalculate}>Calcular</button>
-        <button className="btn-secondary" onClick={handleReset}>
-          Resetar
-        </button>
       </div>
     </div>
   );
