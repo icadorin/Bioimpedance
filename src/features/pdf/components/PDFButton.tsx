@@ -45,7 +45,7 @@ export default function PDFButton({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '8px',
-        borderRadius: '10px',
+        borderRadius: '0.3rem',
         cursor: isLoading ? 'not-allowed' : 'pointer',
         fontWeight: 600,
         opacity: isLoading ? 0.7 : 1,

@@ -20,7 +20,7 @@ export default function ClientQuickActions({ clientId }: Props) {
     const client = getClientById(clientId);
     const assessments = getClientAssessments(clientId);
     const lastAssessment = assessments[0];
-    const previousAssessment = assessments[1]; // Pega a penúltima avaliação
+    const previousAssessment = assessments[1];
 
     if (!client || !lastAssessment) {
       alert('Cliente ou avaliação não encontrada.');

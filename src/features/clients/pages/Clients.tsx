@@ -4,8 +4,6 @@ import ClientList from '../components/ClientList';
 import ClientsHeader from '../components/ClientsHeader';
 import NewClientModal from '../components/NewClientModal';
 import '../styles/clients.css';
-import '../styles/client-profile.css';
-import '../styles/clients-modal.css';
 
 export default function Clients() {
   const { filteredClients, search, setSearch, addClient } = useClients();
