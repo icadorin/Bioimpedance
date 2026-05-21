@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
+import { api } from '../../../services/api';
+import type { Assessment } from '../../assessment/types';
+import type { Client } from '../../clients/types';
 import { useWhatsAppShare } from '../hooks/useWhatsAppShare';
 import ComparisonPDF from '../templates/ComparisonPDF';
-import { useClients } from '../../clients/hooks/useClients';
-import { getAllClients } from '../../../service/database';
 
 function getInitialZoom(width: number) {
   if (width < 768) return 95;
@@ -12,25 +13,73 @@ function getInitialZoom(width: number) {
 }
 
 export default function PDFPreview() {
-  const { getClientById, getClientAssessments } = useClients();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(800);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [template, setTemplate] = useState<'assessment' | 'railway' | 'comparison'>('railway');
+  const [zoom, setZoom] = useState(() => getInitialZoom(window.innerWidth));
+  const [pdfReady, setPdfReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { shareViaWhatsApp, isSharing } = useWhatsAppShare();
 
   const isMobile = windowWidth < 768;
   const isTablet = windowWidth < 1024;
-
-  const clients = getAllClients();
-  const [selectedClientId, setSelectedClientId] = useState(clients[0]?.id || '1');
-  const [template, setTemplate] = useState<'assessment' | 'railway' | 'comparison'>('railway');
-  const { shareViaWhatsApp, isSharing } = useWhatsAppShare();
-  const [zoom, setZoom] = useState(() => getInitialZoom(window.innerWidth));
-
-  const client = getClientById(selectedClientId);
-  const assessments = selectedClientId ? getClientAssessments(selectedClientId) : [];
+  const client = clients.find((item) => item.id === selectedClientId);
   const assessment = assessments[0];
   const previousAssessment = assessments[1];
-  const [pdfReady, setPdfReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadClients() {
+      setLoading(true);
+
+      try {
+        const data = await api.getAllClients();
+        if (!active) return;
+        setClients(data);
+        setSelectedClientId((current) => current || data[0]?.id || '');
+      } catch (error) {
+        console.error('Erro ao carregar clientes para PDF:', error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadClients();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAssessments() {
+      if (!selectedClientId) {
+        setAssessments([]);
+        return;
+      }
+
+      try {
+        const data = await api.getClientAssessments(selectedClientId);
+        if (active) setAssessments(data);
+      } catch (error) {
+        console.error('Erro ao carregar avaliações para PDF:', error);
+        if (active) setAssessments([]);
+      }
+    }
+
+    loadAssessments();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedClientId]);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -54,7 +103,7 @@ export default function PDFPreview() {
     setPdfReady(false);
     const timer = setTimeout(() => setPdfReady(true), 500);
     return () => clearTimeout(timer);
-  }, [selectedClientId]);
+  }, [selectedClientId, assessment?.id, template]);
 
   const handleWhatsAppShare = async () => {
     if (!client || !assessment) return;
@@ -69,7 +118,7 @@ export default function PDFPreview() {
     );
   };
 
-  if (!client || !assessment) {
+  if (loading || !client || !assessment) {
     return (
       <div
         style={{
@@ -84,7 +133,7 @@ export default function PDFPreview() {
           color: '#e4e4e7',
         }}
       >
-        <h2>Sem dados para preview</h2>
+        <h2>{loading ? 'Carregando preview...' : 'Sem dados para preview'}</h2>
         <p style={{ color: '#6b6b6b' }}>Crie um cliente e uma avaliação primeiro.</p>
         <button
           onClick={() => (window.location.href = '/clients')}
@@ -116,7 +165,6 @@ export default function PDFPreview() {
         paddingTop: isMobile ? '56px' : isTablet ? '0px' : 0,
       }}
     >
-      {/* Toolbar */}
       <div
         style={{
           padding: isMobile ? '8px 12px' : '10px 16px',
@@ -160,9 +208,9 @@ export default function PDFPreview() {
               maxWidth: isMobile ? '100%' : '180px',
             }}
           >
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {clients.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
@@ -170,7 +218,7 @@ export default function PDFPreview() {
           {!isMobile && (
             <select
               value={template}
-              onChange={(e) => setTemplate(e.target.value as any)}
+              onChange={(e) => setTemplate(e.target.value as typeof template)}
               style={{
                 padding: '6px 12px',
                 borderRadius: '6px',
@@ -181,9 +229,9 @@ export default function PDFPreview() {
                 maxWidth: '180px',
               }}
             >
-              <option value="railway">🎨 Railway (Dark)</option>
-              <option value="assessment">📄 Padrão (Light)</option>
-              {previousAssessment && <option value="comparison">📊 Comparação</option>}
+              <option value="railway">Railway (Dark)</option>
+              <option value="assessment">Padrão (Light)</option>
+              {previousAssessment && <option value="comparison">Comparação</option>}
             </select>
           )}
 
@@ -195,7 +243,6 @@ export default function PDFPreview() {
           )}
         </div>
 
-        {/* Linha inferior (mobile) ou direita (desktop): zoom + botão */}
         <div
           style={{
             display: 'flex',
@@ -204,7 +251,6 @@ export default function PDFPreview() {
             gap: '6px',
           }}
         >
-          {/* Zoom */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <button
               onClick={() => setZoom(Math.max(25, zoom - 10))}
@@ -241,7 +287,6 @@ export default function PDFPreview() {
             </button>
           </div>
 
-          {/* WhatsApp */}
           <button
             onClick={handleWhatsAppShare}
             disabled={isSharing}
@@ -266,7 +311,6 @@ export default function PDFPreview() {
         </div>
       </div>
 
-      {/* Área do PDF */}
       <div
         ref={containerRef}
         style={{

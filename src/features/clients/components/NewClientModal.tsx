@@ -12,7 +12,7 @@ import {
 interface NewClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<unknown> | unknown;
 }
 
 const goalOptions = [
@@ -42,8 +42,8 @@ export default function NewClientModal({ isOpen, onClose, onSave }: NewClientMod
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset form quando o modal abre
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -57,6 +57,7 @@ export default function NewClientModal({ isOpen, onClose, onSave }: NewClientMod
       });
       setErrors({});
       setTouched({});
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
@@ -131,7 +132,7 @@ export default function NewClientModal({ isOpen, onClose, onSave }: NewClientMod
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const errs = validateClientForm(formData as ClientFormData);
@@ -148,17 +149,26 @@ export default function NewClientModal({ isOpen, onClose, onSave }: NewClientMod
     }
 
     const [day, month, year] = formData.birthDate.split('/');
-    onSave({
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      phone: formData.phone || undefined,
-      gender: formData.gender as 'male' | 'female',
-      birthDate: `${year}-${month}-${day}`,
-      goal: formData.goal || undefined,
-      notes: formData.notes || undefined,
-      status: 'active',
-    });
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      await onSave({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone || undefined,
+        gender: formData.gender as 'male' | 'female',
+        birthDate: `${year}-${month}-${day}`,
+        goal: formData.goal || undefined,
+        notes: formData.notes || undefined,
+        status: 'active',
+      });
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : 'Erro ao salvar cliente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   function handleClose() {
@@ -266,7 +276,9 @@ export default function NewClientModal({ isOpen, onClose, onSave }: NewClientMod
             <button type="button" className="btn-secondary" onClick={handleClose}>
               Cancelar
             </button>
-            <button type="submit">Salvar Cliente</button>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
+            </button>
           </div>
         </form>
       </div>

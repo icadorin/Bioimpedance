@@ -18,7 +18,7 @@ export function usePDFGenerator() {
   const [error, setError] = useState<string | null>(null);
 
   const generateComparisonPDF = useCallback(
-    async (client: Client, assessment: Assessment, previousAssessment: Assessment) => {
+    async (client: Client, assessment: Assessment, _previousAssessment: Assessment) => {
       setIsGenerating(true);
       setError(null);
 

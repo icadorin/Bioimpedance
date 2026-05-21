@@ -1,57 +1,53 @@
-import { useState, useCallback, useMemo } from 'react';
-import * as db from '../../../service/database';
+import { useState, useEffect, useCallback } from 'react';
+import { api } from '../../../services/api';
 import type { Client } from '../types/client.types';
-import type { Assessment } from '../../assessment/types/assessment.types';
 
 export function useClients() {
-  const [clients, setClients] = useState<Client[]>(() => db.getAllClients());
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
-  const filteredClients = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return clients;
-
-    return clients.filter(
-      (client) =>
-        client.name.toLowerCase().includes(term) || client.email?.toLowerCase().includes(term)
-    );
-  }, [clients, search]);
-
-  const getClientById = useCallback((id: string) => {
-    return db.getClientById(id);
+  const loadClients = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getAllClients();
+      setClients(data);
+    } catch (err: any) {
+      console.error(err);
+      setError('Erro ao carregar clientes');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const getClientAssessments = useCallback((clientId: string): Assessment[] => {
-    return db.getClientAssessments(clientId);
-  }, []);
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
 
-  const addClient = useCallback((clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newClient = db.addClient(clientData);
-    setClients(db.getAllClients()); // Atualiza a lista
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(search.toLowerCase()) ||
+      (client.email && client.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const addClient = async (clientData: any) => {
+    const newClient = await api.createClient(clientData);
+    setClients((prev) => [...prev, newClient]);
     return newClient;
-  }, []);
-
-  const updateClient = useCallback((id: string, updates: Partial<Client>) => {
-    const updated = db.updateClient(id, updates);
-    if (updated) setClients(db.getAllClients());
-    return updated;
-  }, []);
-
-  const deleteClient = useCallback((id: string) => {
-    const success = db.deleteClient(id);
-    if (success) setClients(db.getAllClients());
-    return success;
-  }, []);
+  };
 
   return {
     clients,
     filteredClients,
+    loading,
+    error,
     search,
     setSearch,
-    getClientById,
-    getClientAssessments,
+    getClientById: (id: string) => clients.find((c) => c.id === id),
+    getClientAssessments: api.getClientAssessments,
     addClient,
-    updateClient,
-    deleteClient,
+    loadClients,
   };
 }

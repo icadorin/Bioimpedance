@@ -1,42 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { Client } from '../../clients/types/client.types';
-import type { Assessment } from '../../assessment/types/assessment.types';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import type { ClientProgressResponse } from '../../../services/api';
 
 interface Props {
-  items: Array<{
-    client: Client;
-    comparison: {
-      weightDiff: number;
-      bodyFatDiff: number;
-      leanMassDiff: number;
-      fatMassDiff: number;
-      imcDiff: number;
-      latest: Assessment;
-      previous: Assessment;
-    } | null;
-  }>;
+  items: ClientProgressResponse[];
 }
 
 export default function ClientProgressCard({ items }: Props) {
   const navigate = useNavigate();
-
-  // Filtra itens com comparação válida E que tenham dados corporais
-  const validItems = items.filter((item) => {
-    if (!item.comparison) return false;
-
-    const { latest, previous } = item.comparison;
-
-    // Verifica se AMBAS as avaliações têm dados corporais completos
-    return (
-      latest.method !== 'imc' &&
-      previous.method !== 'imc' &&
-      latest.results.bodyFat > 0 &&
-      previous.results.bodyFat > 0 &&
-      latest.results.leanMass > 0 &&
-      previous.results.leanMass > 0
-    );
-  });
+  const validItems = items.filter(
+    (item) => Number.isFinite(item.bodyFatDiff) && Number.isFinite(item.leanMassDiff)
+  );
 
   if (!validItems.length) {
     return (
@@ -60,34 +34,31 @@ export default function ClientProgressCard({ items }: Props) {
       </div>
 
       <div className="client-progress-list">
-        {validItems.map(({ client, comparison }) => {
-          if (!comparison) return null;
-
+        {validItems.map((item) => {
           const bodyFatTrend =
-            comparison.bodyFatDiff > 0 ? 'up' : comparison.bodyFatDiff < 0 ? 'down' : 'stable';
-
+            item.bodyFatDiff > 0 ? 'up' : item.bodyFatDiff < 0 ? 'down' : 'stable';
           const leanMassTrend =
-            comparison.leanMassDiff > 0 ? 'up' : comparison.leanMassDiff < 0 ? 'down' : 'stable';
-
+            item.leanMassDiff > 0 ? 'up' : item.leanMassDiff < 0 ? 'down' : 'stable';
           const weightTrend =
-            comparison.weightDiff > 0 ? 'up' : comparison.weightDiff < 0 ? 'down' : 'stable';
+            item.weightDiff > 0 ? 'up' : item.weightDiff < 0 ? 'down' : 'stable';
 
           return (
             <div
-              key={client.id}
+              key={item.clientId}
               className="client-progress-item"
-              onClick={() => navigate(`/clients/${client.id}`)}
+              onClick={() => navigate(`/clients/${item.clientId}`)}
             >
               <div className="client-progress-item__header">
-                <div className="client-progress-avatar">{client.name.charAt(0).toUpperCase()}</div>
+                <div className="client-progress-avatar">
+                  {item.clientName.charAt(0).toUpperCase()}
+                </div>
                 <div className="client-progress-info">
-                  <strong>{client.name}</strong>
-                  <span>{client.goal || 'Sem objetivo'}</span>
+                  <strong>{item.clientName}</strong>
+                  <span>{item.clientGoal || 'Sem objetivo'}</span>
                 </div>
               </div>
 
               <div className="client-progress-metrics">
-                {/* Peso - sempre disponível */}
                 <div className="client-progress-metric">
                   <span className="metric-label">Peso</span>
                   <span
@@ -96,12 +67,11 @@ export default function ClientProgressCard({ items }: Props) {
                     {weightTrend === 'up' && <TrendingUp size={14} />}
                     {weightTrend === 'down' && <TrendingDown size={14} />}
                     {weightTrend === 'stable' && <Minus size={14} />}
-                    {comparison.weightDiff > 0 ? '+' : ''}
-                    {comparison.weightDiff.toFixed(1)} kg
+                    {item.weightDiff > 0 ? '+' : ''}
+                    {item.weightDiff.toFixed(1)} kg
                   </span>
                 </div>
 
-                {/* Gordura Corporal - só se disponível */}
                 <div className="client-progress-metric">
                   <span className="metric-label">Gordura</span>
                   <span
@@ -110,12 +80,11 @@ export default function ClientProgressCard({ items }: Props) {
                     {bodyFatTrend === 'up' && <TrendingUp size={14} />}
                     {bodyFatTrend === 'down' && <TrendingDown size={14} />}
                     {bodyFatTrend === 'stable' && <Minus size={14} />}
-                    {comparison.bodyFatDiff > 0 ? '+' : ''}
-                    {comparison.bodyFatDiff.toFixed(1)}%
+                    {item.bodyFatDiff > 0 ? '+' : ''}
+                    {item.bodyFatDiff.toFixed(1)}%
                   </span>
                 </div>
 
-                {/* Massa Magra - só se disponível */}
                 <div className="client-progress-metric">
                   <span className="metric-label">Massa Magra</span>
                   <span
@@ -124,16 +93,16 @@ export default function ClientProgressCard({ items }: Props) {
                     {leanMassTrend === 'up' && <TrendingUp size={14} />}
                     {leanMassTrend === 'down' && <TrendingDown size={14} />}
                     {leanMassTrend === 'stable' && <Minus size={14} />}
-                    {comparison.leanMassDiff > 0 ? '+' : ''}
-                    {comparison.leanMassDiff.toFixed(1)} kg
+                    {item.leanMassDiff > 0 ? '+' : ''}
+                    {item.leanMassDiff.toFixed(1)} kg
                   </span>
                 </div>
               </div>
 
               <div className="client-progress-dates">
-                <span>{new Date(comparison.previous.date).toLocaleDateString('pt-BR')}</span>
+                <span>{new Date(item.previousDate).toLocaleDateString('pt-BR')}</span>
                 <span>→</span>
-                <span>{new Date(comparison.latest.date).toLocaleDateString('pt-BR')}</span>
+                <span>{new Date(item.latestDate).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
           );

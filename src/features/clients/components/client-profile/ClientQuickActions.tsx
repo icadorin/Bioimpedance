@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { usePDFGenerator } from '../../../pdf/hooks/usePDFGenerator';
-import { useClients } from '../../hooks/useClients';
+import { api } from '../../../../services/api';
 import PDFButton from '../../../pdf/components/PDFButton';
+import { usePDFGenerator } from '../../../pdf/hooks/usePDFGenerator';
 
 interface Props {
   clientId: string;
@@ -10,31 +10,33 @@ interface Props {
 export default function ClientQuickActions({ clientId }: Props) {
   const navigate = useNavigate();
   const { generateComparisonPDF, isGenerating } = usePDFGenerator();
-  const { getClientById, getClientAssessments } = useClients();
 
   const handleNewAssessment = () => {
     navigate(`/new-assessment/${clientId}`);
   };
 
   const handleGeneratePDF = async () => {
-    const client = getClientById(clientId);
-    const assessments = getClientAssessments(clientId);
-    const lastAssessment = assessments[0];
-    const previousAssessment = assessments[1];
-
-    if (!client || !lastAssessment) {
-      alert('Cliente ou avaliação não encontrada.');
-      return;
-    }
-
-    if (!previousAssessment) {
-      alert('É necessário ter pelo menos 2 avaliações para gerar uma comparação.');
-      return;
-    }
-
     try {
+      const [client, assessments] = await Promise.all([
+        api.getClientById(clientId),
+        api.getClientAssessments(clientId),
+      ]);
+      const lastAssessment = assessments[0];
+      const previousAssessment = assessments[1];
+
+      if (!lastAssessment) {
+        alert('Cliente ou avaliação não encontrada.');
+        return;
+      }
+
+      if (!previousAssessment) {
+        alert('É necessário ter pelo menos 2 avaliações para gerar uma comparação.');
+        return;
+      }
+
       await generateComparisonPDF(client, lastAssessment, previousAssessment);
     } catch (error) {
+      console.error(error);
       alert('Erro ao gerar PDF. Tente novamente.');
     }
   };

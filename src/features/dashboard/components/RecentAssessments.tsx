@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { getAllClients } from '../../../service/database';
+import { useClients } from '../../clients/hooks/useClients';
 import type { Assessment } from '../../assessment/types/assessment.types';
 import { Calendar, Scale, Activity } from 'lucide-react';
 
@@ -9,6 +9,7 @@ interface Props {
 
 export default function RecentAssessments({ assessments }: Props) {
   const navigate = useNavigate();
+  const { getClientById } = useClients();
 
   if (!assessments.length) {
     return (
@@ -33,7 +34,7 @@ export default function RecentAssessments({ assessments }: Props) {
 
       <div className="recent-assessments">
         {assessments.map((assessment) => {
-          const client = getAllClients().find((c) => c.id === assessment.clientId);
+          const client = getClientById(assessment.clientId || '');
 
           return (
             <div
@@ -66,10 +67,10 @@ export default function RecentAssessments({ assessments }: Props) {
                 </div>
                 <div className="recent-assessment-metric secondary">
                   <span>
-                    {assessment.results.bodyFat > 0
+                    {assessment.results?.bodyFat > 0
                       ? `${assessment.results.bodyFat.toFixed(1)}% BF`
                       : assessment.method === 'imc'
-                        ? `IMC ${assessment.results.imc.toFixed(1)}`
+                        ? `IMC ${assessment.results?.imc?.toFixed(1)}`
                         : '—'}
                   </span>
                 </div>

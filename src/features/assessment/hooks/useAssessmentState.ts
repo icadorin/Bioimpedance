@@ -1,14 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Assessment } from '../types/assessment.types';
 import type { BaseAssessmentInput } from '../types/assessment-input.types';
-
-const STORAGE_KEY = 'assessment-state-v2';
-
-type PersistedState = {
-  commonData: BaseAssessmentInput;
-  commonInputValues: CommonInputValues;
-  assessmentNotes: string;
-};
 
 type CommonInputValues = {
   weight: string;
@@ -31,43 +23,17 @@ const INITIAL_COMMON_INPUT: CommonInputValues = {
   age: '',
 };
 
-function loadFromStorage(): PersistedState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as PersistedState) : null;
-  } catch {
-    return null;
-  }
-}
-
 function parseDecimal(value: string): number {
-  const v = value.replace(',', '.');
-  return v === '' || v === '.' ? 0 : Number(v);
+  const normalized = value.replace(',', '.');
+  return normalized === '' || normalized === '.' ? 0 : Number(normalized);
 }
 
 export function useAssessmentState() {
-  const saved = loadFromStorage();
+  const [commonData, setCommonData] = useState<BaseAssessmentInput>(INITIAL_COMMON);
+  const [commonInputValues, setCommonInputValues] =
+    useState<CommonInputValues>(INITIAL_COMMON_INPUT);
+  const [assessmentNotes, setAssessmentNotes] = useState('');
 
-  // Mantém apenas os estados realmente necessários
-  const [commonData, setCommonData] = useState<BaseAssessmentInput>(
-    saved?.commonData ?? INITIAL_COMMON
-  );
-  const [commonInputValues, setCommonInputValues] = useState<CommonInputValues>(
-    saved?.commonInputValues ?? INITIAL_COMMON_INPUT
-  );
-  const [assessmentNotes, setAssessmentNotes] = useState<string>(saved?.assessmentNotes ?? '');
-
-  // Persistência simplificada
-  useEffect(() => {
-    const state: PersistedState = {
-      commonData,
-      commonInputValues,
-      assessmentNotes,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [commonData, commonInputValues, assessmentNotes]);
-
-  // Handler comum
   function handleCommonChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
 
@@ -76,42 +42,42 @@ export function useAssessmentState() {
       if (!/^\d*\.?\d*$/.test(display)) return;
       setCommonInputValues((prev) => ({ ...prev, [name]: value }));
       setCommonData((prev) => ({ ...prev, [name]: parseDecimal(value) }));
-    } else if (name === 'age') {
+      return;
+    }
+
+    if (name === 'age') {
       if (!/^\d*$/.test(value)) return;
       setCommonInputValues((prev) => ({ ...prev, age: value }));
       setCommonData((prev) => ({ ...prev, age: value === '' ? 0 : Number(value) }));
-    } else {
-      setCommonData((prev) => ({ ...prev, [name]: value }));
+      return;
     }
+
+    setCommonData((prev) => ({ ...prev, [name]: value }));
   }
 
-  // Carregar apenas dados básicos de uma avaliação existente
   function loadFromAssessment(assessment: Assessment) {
-    const newCommonData = {
+    setCommonData({
       weight: assessment.weight,
       height: assessment.height,
       age: assessment.age,
       gender: assessment.gender,
-      activityLevel: 'moderate' as const,
-      objective: 'maintenance' as const,
-    };
+      activityLevel: 'moderate',
+      objective: 'maintenance',
+    });
 
-    const newInputValues = {
+    setCommonInputValues({
       weight: String(assessment.weight),
       height: String(assessment.height),
       age: String(assessment.age),
-    };
+    });
 
-    setCommonData(newCommonData);
-    setCommonInputValues(newInputValues);
     setAssessmentNotes(assessment.observations || '');
   }
 
-  // Reset geral
   function resetAll() {
     setCommonData({ ...INITIAL_COMMON });
     setCommonInputValues({ ...INITIAL_COMMON_INPUT });
-    localStorage.removeItem(STORAGE_KEY);
+    setAssessmentNotes('');
   }
 
   return {

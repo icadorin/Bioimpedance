@@ -1,44 +1,49 @@
-// src/features/assessment/hooks/useAssessments.ts
-import { useState, useCallback } from 'react';
-import * as db from '../../../service/database';
+import { useCallback, useState } from 'react';
+import { api } from '../../../services/api';
 import type { Assessment } from '../types/assessment.types';
 
-export function useAssessments() {
-  const [assessments, setAssessments] = useState<Assessment[]>(() => db.getAllAssessments());
+type AssessmentPayload = Parameters<typeof api.saveAssessment>[0];
 
-  const refreshAssessments = useCallback(() => {
-    setAssessments(db.getAllAssessments());
+export function useAssessments() {
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+
+  const refreshAssessments = useCallback(async (clientId: string) => {
+    const data = await api.getClientAssessments(clientId);
+    setAssessments(data);
+    return data;
   }, []);
 
   const getClientAssessments = useCallback((clientId: string) => {
-    return db.getClientAssessments(clientId);
+    return api.getClientAssessments(clientId);
   }, []);
 
-  const addAssessment = useCallback(
-    (data: Omit<Assessment, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const newAssessment = db.addAssessment(data);
-      refreshAssessments();
-      return newAssessment;
-    },
-    [refreshAssessments]
-  );
+  const addAssessment = useCallback(async (data: AssessmentPayload) => {
+    const newAssessment = await api.saveAssessment(data);
+    setAssessments((prev) => [newAssessment, ...prev]);
+    return newAssessment;
+  }, []);
 
-  const deleteAssessment = useCallback(
-    (id: string) => {
-      const success = db.deleteAssessment(id);
-      if (success) refreshAssessments();
-      return success;
-    },
-    [refreshAssessments]
-  );
+  const deleteAssessment = useCallback(async () => {
+    throw new Error('Exclusao de avaliacoes ainda nao esta disponivel no backend.');
+  }, []);
 
   const duplicateAssessment = useCallback(
-    (id: string) => {
-      const duplicated = db.duplicateAssessment(id);
-      if (duplicated) refreshAssessments();
-      return duplicated;
+    async (id: string) => {
+      const original = assessments.find((assessment) => assessment.id === id);
+      if (!original) return undefined;
+
+      return addAssessment({
+        clientId: original.clientId,
+        date: new Date().toISOString().split('T')[0],
+        method: original.method,
+        weight: original.weight,
+        height: original.height,
+        age: original.age,
+        gender: original.gender,
+        observations: original.observations,
+      });
     },
-    [refreshAssessments]
+    [addAssessment, assessments]
   );
 
   return {

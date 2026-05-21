@@ -1,71 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import type { AssessmentMethod } from '../types/assessment.types';
-import type { NavyAssessmentInput } from '../types/assessment-input.types';
-import type { BioimpedanceInput } from '../types/bioimpedance.types';
-import { useAssessments } from '../hooks/useAssessments';
-import NavyCalculator from '../components/calculators/NavyCalculator';
-import BioimpedanceCalculator from '../components/calculators/BioimpedanceCalculator';
-import SkinfoldCalculator from '../components/calculators/SkinfoldCalculator';
-import ImcCalculator from '../components/calculators/ImcCalculator';
-import ResultCards from '../components/ResultCards';
-import ClientContextBar from '../../clients/components/client-profile/ClientContextBar';
+import { api, type CalculationResult } from '../../../services/api';
 import { InputField } from '../../../components/shared/InputField';
+import type { NavyAssessmentInput } from '../types/assessment-input.types';
+import type { Assessment, AssessmentMethod } from '../types/assessment.types';
+import type { BioimpedanceInput } from '../types/bioimpedance.types';
+import type { SkinfoldInput, SkinfoldMeasurementKey } from '../types/skinfold.types';
 import { methodOptions } from '../config/selectOptions';
 import { PROTOCOL_FIELDS } from '../constants/protocolFields';
 import { EMPTY_MESSAGES, INVALID_MESSAGES } from '../constants/validationMessages';
-import {
-  calculateIMC,
-  calculateBMR,
-  calculateTDEE,
-  calculateBodyFat,
-  calculateLeanMass,
-  calculateFatMass,
-  calculateFFMI,
-} from '../utils/calculations';
-import {
-  calculateBodyFatBio,
-  calculateBioImpedance,
-  calculatePhaseAngle,
-  calculateTBW,
-} from '../utils/calculationsBio';
-import {
-  calculateBodyFatSkinfold,
-  calculateSkinfoldDensity,
-  calculateSkinfoldSum,
-  getRequiredSkinfoldFields,
-} from '../utils/calculationsSkin';
-import { interpretBodyFat, classifyIMC } from '../utils/interpretation';
-import { generateRecommendation } from '../utils/recommendationEngine';
 import { useAssessmentState } from '../hooks/useAssessmentState';
+import { getRequiredSkinfoldFields } from '../utils/calculationsSkin';
+import BioimpedanceCalculator from '../components/calculators/BioimpedanceCalculator';
+import ImcCalculator from '../components/calculators/ImcCalculator';
+import NavyCalculator from '../components/calculators/NavyCalculator';
+import SkinfoldCalculator from '../components/calculators/SkinfoldCalculator';
+import ResultCards from '../components/ResultCards';
+import ClientContextBar from '../../clients/components/client-profile/ClientContextBar';
 import { useClients } from '../../clients/hooks/useClients';
 import '../styles/new-assessment.css';
-
-type Result = {
-  imc: number;
-  bmr: number;
-  tdee: number;
-  bodyFat: number;
-  leanMass: number;
-  fatMass: number;
-  ffmi: number;
-  bodyFatLevel: string;
-  targetCalories: number;
-  carbs: number;
-  fat: number;
-  protein: number;
-  cardio: string;
-  notes: string[];
-  trainingType: string;
-  methodDetails: {
-    title: string;
-    items: Array<{
-      label: string;
-      value: string;
-      description: string;
-    }>;
-  };
-};
 
 type SpecificData = {
   waist: number;
@@ -101,22 +54,8 @@ const INITIAL_SPECIFIC: SpecificData = {
   thigh: 0,
 };
 
-export default function NewAssessment() {
-  const { clientId } = useParams<{ clientId: string }>();
-  const { addAssessment } = useAssessments();
-  const { getClientById, getClientAssessments } = useClients();
-
-  const selectedClient = clientId ? getClientById(clientId) : null;
-  const clientAssessments = selectedClient ? getClientAssessments(selectedClient.id) : [];
-  const lastAssessment = clientAssessments[0] ?? null;
-
-  const [savedMessage, setSavedMessage] = useState<string>('');
-  const [method, setMethod] = useState<AssessmentMethod>('navy');
-  const [currentResult, setCurrentResult] = useState<Result | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const [specificData, setSpecificData] = useState<SpecificData>(INITIAL_SPECIFIC);
-  const [specificInputValues, setSpecificInputValues] = useState<Record<string, string>>({
+function createEmptySpecificInputs() {
+  return {
     waist: '',
     neck: '',
     hip: '',
@@ -130,7 +69,33 @@ export default function NewAssessment() {
     abdominal: '',
     suprailiac: '',
     thigh: '',
-  });
+  };
+}
+
+function parseDecimal(value: string): number {
+  const normalized = value.replace(',', '.');
+  return normalized === '' || normalized === '.' ? 0 : Number(normalized);
+}
+
+export default function NewAssessment() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const { getClientById } = useClients();
+
+  const selectedClient = clientId ? getClientById(clientId) : null;
+  const [clientAssessments, setClientAssessments] = useState<Assessment[]>([]);
+  const lastAssessment = clientAssessments[0] ?? null;
+
+  const [savedMessage, setSavedMessage] = useState('');
+  const [method, setMethod] = useState<AssessmentMethod>('navy');
+  const [currentResult, setCurrentResult] = useState<CalculationResult | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [specificData, setSpecificData] = useState<SpecificData>(INITIAL_SPECIFIC);
+  const [specificInputValues, setSpecificInputValues] = useState<Record<string, string>>(
+    createEmptySpecificInputs()
+  );
 
   const {
     commonData,
@@ -145,30 +110,44 @@ export default function NewAssessment() {
   } = useAssessmentState();
 
   useEffect(() => {
+    let active = true;
+
+    async function loadClientAssessments() {
+      if (!clientId) {
+        setClientAssessments([]);
+        return;
+      }
+
+      try {
+        const assessments = await api.getClientAssessments(clientId);
+        if (active) setClientAssessments(assessments);
+      } catch (error) {
+        console.error('Erro ao carregar avaliacoes do cliente:', error);
+        if (active) setClientAssessments([]);
+      }
+    }
+
+    loadClientAssessments();
+
+    return () => {
+      active = false;
+    };
+  }, [clientId]);
+
+  useEffect(() => {
+    const cleanSpecificInputs = createEmptySpecificInputs();
+
     setErrors({});
     setCurrentResult(null);
     setSpecificData({ ...INITIAL_SPECIFIC });
-
-    const cleanSpecificInputs = {
-      waist: '',
-      neck: '',
-      hip: '',
-      resistance: '',
-      reactance: '',
-      biceps: '',
-      triceps: '',
-      subscapular: '',
-      chest: '',
-      midaxillary: '',
-      abdominal: '',
-      suprailiac: '',
-      thigh: '',
-    };
     setSpecificInputValues(cleanSpecificInputs);
 
     if (selectedClient && lastAssessment) {
       loadFromAssessment(lastAssessment);
-    } else if (selectedClient) {
+      return;
+    }
+
+    if (selectedClient) {
       setCommonData({
         weight: 0,
         height: 0,
@@ -178,54 +157,15 @@ export default function NewAssessment() {
         objective: 'maintenance',
       });
       setCommonInputValues({ weight: '', height: '', age: '' });
-    } else {
-      resetAll();
-      setSpecificData({ ...INITIAL_SPECIFIC });
-      setSpecificInputValues(cleanSpecificInputs);
-    }
-  }, [clientId]);
-
-  function handleSaveAssessment() {
-    if (!currentResult) return;
-    if (!commonData.gender || !commonData.weight || !commonData.height || !commonData.age) {
-      alert('Preencha todos os campos obrigatórios antes de salvar.');
+      setAssessmentNotes('');
       return;
     }
 
-    const specificData_mapped: any = {};
+    resetAll();
+  }, [clientId, lastAssessment?.id, selectedClient?.id]);
 
-    if (method === 'navy') {
-      specificData_mapped.navy = {
-        waist: specificData.waist,
-        neck: specificData.neck,
-        hip: commonData.gender === 'female' ? specificData.hip : undefined,
-      };
-    } else if (method === 'bioimpedance') {
-      specificData_mapped.bioimpedance = {
-        resistance: specificData.resistance,
-        reactance: specificData.reactance,
-      };
-    } else if (method === 'skinfold') {
-      specificData_mapped.skinfold = {
-        protocol: specificData.protocol,
-        ...Object.fromEntries(
-          Object.entries(specificData).filter(([key]) =>
-            [
-              'biceps',
-              'triceps',
-              'subscapular',
-              'chest',
-              'midaxillary',
-              'abdominal',
-              'suprailiac',
-              'thigh',
-            ].includes(key)
-          )
-        ),
-      };
-    }
-
-    const newAssessment = addAssessment({
+  function buildAssessmentPayload() {
+    return {
       clientId: clientId || undefined,
       date: new Date().toISOString().split('T')[0],
       method,
@@ -233,46 +173,94 @@ export default function NewAssessment() {
       height: commonData.height,
       age: commonData.age,
       gender: commonData.gender as 'male' | 'female',
-      ...specificData_mapped,
-      results: {
-        imc: currentResult.imc,
-        bodyFat: currentResult.bodyFat,
-        leanMass: currentResult.leanMass,
-        fatMass: currentResult.fatMass,
-        ffmi: currentResult.ffmi,
-        bmr: currentResult.bmr,
-        tdee: currentResult.tdee,
-        targetCalories: currentResult.targetCalories,
-        bodyFatLevel: currentResult.bodyFatLevel,
-      },
+      activityLevel: commonData.activityLevel,
+      objective: commonData.objective,
+      waist: specificData.waist,
+      neck: specificData.neck,
+      hip: specificData.hip,
+      resistance: specificData.resistance,
+      reactance: specificData.reactance,
+      protocol: specificData.protocol,
+      biceps: specificData.biceps,
+      chest: specificData.chest,
+      midaxillary: specificData.midaxillary,
+      triceps: specificData.triceps,
+      subscapular: specificData.subscapular,
+      abdominal: specificData.abdominal,
+      suprailiac: specificData.suprailiac,
+      thigh: specificData.thigh,
       observations: assessmentNotes || undefined,
-    });
+    };
+  }
 
-    setSavedMessage(`Avaliação salva com sucesso! (${newAssessment.date})`);
-    setTimeout(() => setSavedMessage(''), 5000);
+  async function handleSaveAssessment() {
+    if (!currentResult) {
+      alert('Faça o cálculo antes de salvar.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const savedAssessment = await api.saveAssessment(buildAssessmentPayload());
+
+      if (clientId) {
+        setClientAssessments((prev) => [
+          savedAssessment,
+          ...prev.filter((assessment) => assessment.id !== savedAssessment.id),
+        ]);
+      }
+
+      setSavedMessage('Avaliação salva com sucesso!');
+      setTimeout(() => setSavedMessage(''), 4000);
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Tente novamente';
+      alert(`Erro ao salvar: ${message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleCalculate() {
+    setIsCalculating(true);
+    setErrors({});
+
+    try {
+      const result = await api.calculate(buildAssessmentPayload());
+      setCurrentResult(result);
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Tente novamente';
+      alert(`Erro ao calcular: ${message}`);
+    } finally {
+      setIsCalculating(false);
+    }
   }
 
   function validateCommonFields(): Record<string, string> {
-    const errs: Record<string, string> = {};
+    const nextErrors: Record<string, string> = {};
     const weightError = validateField('weight', commonData.weight);
-    if (weightError) errs.weight = weightError;
+    if (weightError) nextErrors.weight = weightError;
     const heightError = validateField('height', commonData.height);
-    if (heightError) errs.height = heightError;
+    if (heightError) nextErrors.height = heightError;
     const ageError = validateField('age', commonData.age);
-    if (ageError) errs.age = ageError;
+    if (ageError) nextErrors.age = ageError;
     const genderError = validateField('gender', commonData.gender);
-    if (genderError) errs.gender = genderError;
-    return errs;
+    if (genderError) nextErrors.gender = genderError;
+    return nextErrors;
   }
 
   function validateField(field: string, value: number | string): string {
     if (field === 'gender') {
       return !value || value === '' ? EMPTY_MESSAGES.gender : '';
     }
-    const numValue = value as number;
-    if (!numValue || numValue === 0) {
+
+    const numericValue = value as number;
+    if (!numericValue || numericValue === 0) {
       return EMPTY_MESSAGES[field] ?? `${field} é obrigatório`;
     }
+
     const ranges: Record<string, { min: number; max: number }> = {
       weight: { min: 20, max: 300 },
       height: { min: 50, max: 250 },
@@ -291,89 +279,71 @@ export default function NewAssessment() {
       suprailiac: { min: 1, max: 100 },
       thigh: { min: 1, max: 100 },
     };
+
     const range = ranges[field];
-    if (range && (numValue < range.min || numValue > range.max)) {
+    if (range && (numericValue < range.min || numericValue > range.max)) {
       return INVALID_MESSAGES[field] ?? `${field} deve ser entre ${range.min} e ${range.max}`;
     }
+
     return '';
   }
 
-  function handleNavyCalculate() {
-    const errs = validateCommonFields();
+  async function calculateIfValid(nextErrors: Record<string, string>) {
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    await handleCalculate();
+  }
+
+  async function handleNavyCalculate() {
+    const nextErrors = validateCommonFields();
     const waistError = validateField('waist', specificData.waist);
-    if (waistError) errs.waist = waistError;
+    if (waistError) nextErrors.waist = waistError;
     const neckError = validateField('neck', specificData.neck);
-    if (neckError) errs.neck = neckError;
+    if (neckError) nextErrors.neck = neckError;
+
     if (commonData.gender === 'female') {
       const hipError = validateField('hip', specificData.hip);
-      if (hipError) errs.hip = hipError;
+      if (hipError) nextErrors.hip = hipError;
     }
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors({});
-    const navyData = {
-      ...commonData,
-      gender: commonData.gender as 'male' | 'female',
-      waist: specificData.waist,
-      neck: specificData.neck,
-      hip: specificData.hip,
-    };
-    setCurrentResult(calcNavy(navyData as NavyAssessmentInput));
+
+    await calculateIfValid(nextErrors);
   }
 
-  function handleBioCalculate() {
-    const errs = validateCommonFields();
+  async function handleBioCalculate() {
+    const nextErrors = validateCommonFields();
     const resistanceError = validateField('resistance', specificData.resistance);
-    if (resistanceError) errs.resistance = resistanceError;
+    if (resistanceError) nextErrors.resistance = resistanceError;
     const reactanceError = validateField('reactance', specificData.reactance);
-    if (reactanceError) errs.reactance = reactanceError;
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors({});
-    const bioData = {
-      ...commonData,
-      gender: commonData.gender as 'male' | 'female',
-      resistance: specificData.resistance,
-      reactance: specificData.reactance,
-    };
-    setCurrentResult(calcBio(bioData as BioimpedanceInput));
+    if (reactanceError) nextErrors.reactance = reactanceError;
+    await calculateIfValid(nextErrors);
   }
 
-  function handleSkinfoldCalculate() {
-    const errs = validateCommonFields();
-    const skinfoldData = { ...commonData, ...specificData };
-    const requiredFields = getRequiredSkinfoldFields(skinfoldData as any);
-    requiredFields.forEach((field: string) => {
-      const error = validateField(field, specificData[field as keyof SpecificData] as number);
-      if (error) errs[field] = error;
+  async function handleSkinfoldCalculate() {
+    const nextErrors = validateCommonFields();
+    const skinfoldData: SkinfoldInput = { ...commonData, ...specificData };
+    const requiredFields = getRequiredSkinfoldFields(skinfoldData);
+
+    requiredFields.forEach((field) => {
+      const error = validateField(field, specificData[field]);
+      if (error) nextErrors[field] = error;
     });
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors({});
-    setCurrentResult(calcSkinfold(skinfoldData));
+
+    await calculateIfValid(nextErrors);
   }
 
-  function handleImcCalculate() {
-    const errs = validateCommonFields();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors({});
-    setCurrentResult(calcImc());
+  async function handleImcCalculate() {
+    await calculateIfValid(validateCommonFields());
   }
 
   function handleSpecificChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
+
     if (name === 'protocol') {
-      const newProtocol = value as 'jp3' | 'jp7' | 'dw4';
-      const allSkinfoldFields = [
+      const newProtocol = value as SpecificData['protocol'];
+      const allSkinfoldFields: SkinfoldMeasurementKey[] = [
         'biceps',
         'triceps',
         'subscapular',
@@ -384,31 +354,35 @@ export default function NewAssessment() {
         'thigh',
       ];
       const nextData = { ...commonData, ...specificData, protocol: newProtocol };
-      const requiredFields = getRequiredSkinfoldFields(nextData as any);
-      const removedFields = allSkinfoldFields.filter((f) => !requiredFields.includes(f as any));
+      const requiredFields = getRequiredSkinfoldFields(nextData);
+      const removedFields = allSkinfoldFields.filter((field) => !requiredFields.includes(field));
+
       setSpecificData((prev) => {
         const updated = { ...prev, protocol: newProtocol };
-        removedFields.forEach((f) => {
-          (updated as any)[f] = 0;
+        removedFields.forEach((field) => {
+          updated[field] = 0;
         });
         return updated;
       });
+
       setSpecificInputValues((prev) => {
         const updated = { ...prev };
-        removedFields.forEach((f) => {
-          updated[f] = '';
+        removedFields.forEach((field) => {
+          updated[field] = '';
         });
         return updated;
       });
+
       setErrors((prev) => {
         const updated = { ...prev };
-        removedFields.forEach((f) => {
-          delete updated[f];
+        removedFields.forEach((field) => {
+          delete updated[field];
         });
         return updated;
       });
       return;
     }
+
     if (name in specificData) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
       const display = value.replace(',', '.');
@@ -418,219 +392,19 @@ export default function NewAssessment() {
     }
   }
 
-  function parseDecimal(value: string): number {
-    const v = value.replace(',', '.');
-    return v === '' || v === '.' ? 0 : Number(v);
-  }
-
-  function calcNavy(data: NavyAssessmentInput): Result {
-    const bmr = calculateBMR(data);
-    const tdee = calculateTDEE(data, bmr);
-    const bodyFat = calculateBodyFat(data);
-    const leanMass = calculateLeanMass(data.weight, bodyFat);
-    const fatMass = calculateFatMass(data.weight, bodyFat);
-    const ffmi = calculateFFMI(leanMass, data.height);
-    const imc = calculateIMC(data);
-    const bodyFatLevel = interpretBodyFat(data.gender, bodyFat);
-    const recommendation = generateRecommendation(data, tdee, bodyFat);
-    const navyBase =
-      data.gender === 'male' ? data.waist - data.neck : data.waist + data.hip - data.neck;
-    return {
-      imc,
-      bmr,
-      tdee,
-      bodyFat,
-      leanMass,
-      fatMass,
-      ffmi,
-      bodyFatLevel,
-      targetCalories: recommendation.calories,
-      carbs: recommendation.carbs,
-      fat: recommendation.fat,
-      protein: recommendation.protein,
-      cardio: recommendation.cardio,
-      notes: recommendation.notes,
-      trainingType: recommendation.trainingType,
-      methodDetails: {
-        title: 'Detalhes do método',
-        items: [
-          {
-            label: 'Método',
-            value: 'US Navy',
-            description: 'Estimativa baseada em circunferências corporais',
-          },
-          {
-            label: 'Medida base',
-            value: `${navyBase.toFixed(1)} cm`,
-            description: 'Valor principal usado no cálculo',
-          },
-        ],
-      },
-    };
-  }
-
-  function calcBio(data: BioimpedanceInput): Result {
-    const bioAsUser = { ...data, waist: 0, neck: 0, hip: 0 };
-    const bodyFat = calculateBodyFatBio(data);
-    const leanMass = calculateLeanMass(data.weight, bodyFat);
-    const fatMass = calculateFatMass(data.weight, bodyFat);
-    const imc = calculateIMC(bioAsUser);
-    const bmr = calculateBMR(bioAsUser);
-    const tdee = calculateTDEE(bioAsUser, bmr);
-    const ffmi = calculateFFMI(leanMass, data.height);
-    const bodyFatLevel = interpretBodyFat(data.gender, bodyFat);
-    const recommendation = generateRecommendation(bioAsUser, tdee, bodyFat);
-    const impedance = calculateBioImpedance(data);
-    const phaseAngle = calculatePhaseAngle(data);
-    const tbw = calculateTBW(data);
-    return {
-      imc,
-      bmr,
-      tdee,
-      bodyFat,
-      leanMass,
-      fatMass,
-      ffmi,
-      bodyFatLevel,
-      targetCalories: recommendation.calories,
-      carbs: recommendation.carbs,
-      fat: recommendation.fat,
-      protein: recommendation.protein,
-      cardio: recommendation.cardio,
-      notes: recommendation.notes,
-      trainingType: recommendation.trainingType,
-      methodDetails: {
-        title: 'Detalhes da bioimpedância',
-        items: [
-          {
-            label: 'Impedância',
-            value: `${impedance.toFixed(1)} ohms`,
-            description: 'Resistência elétrica corporal total',
-          },
-          {
-            label: 'Ângulo de fase',
-            value: `${phaseAngle.toFixed(1)} graus`,
-            description: 'Indicador associado à saúde celular',
-          },
-          {
-            label: 'Água corporal',
-            value: `${tbw.toFixed(1)} L`,
-            description: 'Estimativa de água total no organismo',
-          },
-        ],
-      },
-    };
-  }
-
-  function calcSkinfold(data: any): Result {
-    const userInput = { ...commonData, waist: 0, neck: 0, hip: 0 };
-    const bodyFat = calculateBodyFatSkinfold(data);
-    const leanMass = calculateLeanMass(data.weight, bodyFat);
-    const fatMass = calculateFatMass(data.weight, bodyFat);
-    const imc = calculateIMC(userInput);
-    const bmr = calculateBMR(userInput);
-    const tdee = calculateTDEE(userInput, bmr);
-    const ffmi = calculateFFMI(leanMass, data.height);
-    const bodyFatLevel = interpretBodyFat(data.gender, bodyFat);
-    const recommendation = generateRecommendation(userInput, tdee, bodyFat);
-    const sum = calculateSkinfoldSum(data);
-    const density = calculateSkinfoldDensity(data);
-    const protocolLabel =
-      data.protocol === 'jp3'
-        ? 'Jackson-Pollock 3 dobras'
-        : data.protocol === 'jp7'
-          ? 'Jackson-Pollock 7 dobras'
-          : 'Durnin-Womersley 4 dobras';
-    return {
-      imc,
-      bmr,
-      tdee,
-      bodyFat,
-      leanMass,
-      fatMass,
-      ffmi,
-      bodyFatLevel,
-      targetCalories: recommendation.calories,
-      carbs: recommendation.carbs,
-      fat: recommendation.fat,
-      protein: recommendation.protein,
-      cardio: recommendation.cardio,
-      notes: recommendation.notes,
-      trainingType: recommendation.trainingType,
-      methodDetails: {
-        title: 'Detalhes das dobras',
-        items: [
-          {
-            label: 'Protocolo',
-            value: protocolLabel,
-            description: 'Método utilizado para cálculo das dobras',
-          },
-          {
-            label: 'Soma das dobras',
-            value: `${sum.toFixed(1)} mm`,
-            description: 'Soma total das dobras medidas',
-          },
-          {
-            label: 'Densidade corporal',
-            value: density.toFixed(4),
-            description: 'Estimativa da densidade corporal',
-          },
-        ],
-      },
-    };
-  }
-
-  function calcImc(): Result {
-    const data: NavyAssessmentInput = { ...commonData, waist: 0, neck: 0, hip: 0 };
-    const bmr = calculateBMR(data);
-    const tdee = calculateTDEE(data, bmr);
-    const imc = calculateIMC(data);
-    const recommendation = generateRecommendation(data, tdee, 0);
-    return {
-      imc,
-      bmr,
-      tdee,
-      bodyFat: 0,
-      leanMass: 0,
-      fatMass: 0,
-      ffmi: 0,
-      bodyFatLevel: '—',
-      targetCalories: recommendation.calories,
-      carbs: recommendation.carbs,
-      fat: recommendation.fat,
-      protein: recommendation.protein,
-      cardio: recommendation.cardio,
-      notes: recommendation.notes,
-      trainingType: recommendation.trainingType,
-      methodDetails: {
-        title: 'Detalhes do IMC',
-        items: [
-          {
-            label: 'IMC',
-            value: imc.toFixed(1),
-            description: 'Índice de Massa Corporal (peso / altura²)',
-          },
-          {
-            label: 'Classificação',
-            value: classifyIMC(imc),
-            description: 'Baseado nos critérios da OMS',
-          },
-        ],
-      },
-    };
-  }
-
   const getNavyInputValues = () => ({
     ...commonInputValues,
     waist: specificInputValues.waist || '',
     neck: specificInputValues.neck || '',
     hip: specificInputValues.hip || '',
   });
+
   const getBioInputValues = () => ({
     ...commonInputValues,
     resistance: specificInputValues.resistance || '',
     reactance: specificInputValues.reactance || '',
   });
+
   const getSkinfoldInputValues = () => ({
     ...commonInputValues,
     biceps: specificInputValues.biceps || '',
@@ -642,72 +416,70 @@ export default function NewAssessment() {
     suprailiac: specificInputValues.suprailiac || '',
     thigh: specificInputValues.thigh || '',
   });
+
   const getImcInputValues = () => ({ ...commonInputValues, waist: '', neck: '', hip: '' });
 
   function handleReset() {
     setErrors({});
     setCurrentResult(null);
-    setSpecificData(INITIAL_SPECIFIC);
-    setSpecificInputValues({
-      waist: '',
-      neck: '',
-      hip: '',
-      resistance: '',
-      reactance: '',
-      biceps: '',
-      triceps: '',
-      subscapular: '',
-      chest: '',
-      midaxillary: '',
-      abdominal: '',
-      suprailiac: '',
-      thigh: '',
-    });
+    setSpecificData({ ...INITIAL_SPECIFIC });
+    setSpecificInputValues(createEmptySpecificInputs());
     resetAll();
   }
 
-  const resetSkinfoldFields = (gender: 'male' | 'female', protocol: string) => {
+  function resetSkinfoldFields(gender: 'male' | 'female', protocol: string) {
     if (protocol !== 'jp3') return;
     const fieldsToReset = PROTOCOL_FIELDS.jp3.toReset[gender];
+
     setSpecificData((prev) => {
       const updated = { ...prev };
-      fieldsToReset.forEach((field) => (updated[field] = 0));
+      fieldsToReset.forEach((field) => {
+        updated[field] = 0;
+      });
       return updated;
     });
+
     setSpecificInputValues((prev) => {
       const updated = { ...prev };
-      fieldsToReset.forEach((field) => (updated[field] = ''));
+      fieldsToReset.forEach((field) => {
+        updated[field] = '';
+      });
       return updated;
     });
+
     setErrors((prev) => {
       const updated = { ...prev };
       fieldsToReset.forEach((field) => delete updated[field]);
       return updated;
     });
-  };
+  }
 
   const handleNavyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setErrors((prev) => ({ ...prev, [name]: '' }));
+
     if (name === 'gender') {
       handleCommonChange(e);
+
       if (value === 'male') {
         setSpecificData((prev) => ({ ...prev, hip: 0 }));
         setSpecificInputValues((prev) => ({ ...prev, hip: '' }));
         setErrors((prev) => {
-          const u = { ...prev };
-          delete u.hip;
-          return u;
+          const updated = { ...prev };
+          delete updated.hip;
+          return updated;
         });
       }
       return;
     }
+
     if (['waist', 'neck', 'hip'].includes(name)) handleSpecificChange(e);
     else handleCommonChange(e);
   };
 
   const handleBioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+
     if (['resistance', 'reactance'].includes(e.target.name)) handleSpecificChange(e);
     else handleCommonChange(e);
   };
@@ -715,11 +487,13 @@ export default function NewAssessment() {
   const handleSkinfoldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setErrors((prev) => ({ ...prev, [name]: '' }));
+
     if (name === 'gender') {
       handleCommonChange(e);
       resetSkinfoldFields(value as 'male' | 'female', specificData.protocol);
       return;
     }
+
     const isSkinfoldField = [
       'protocol',
       'biceps',
@@ -731,13 +505,13 @@ export default function NewAssessment() {
       'suprailiac',
       'thigh',
     ].includes(name);
+
     if (isSkinfoldField) handleSpecificChange(e);
     else handleCommonChange(e);
   };
 
   return (
     <div className="container">
-      {/* ── Page header ── */}
       <div className="assessment-page-header">
         <h1>Nova Avaliação</h1>
         <div className="assessment-header-controls">
@@ -763,10 +537,8 @@ export default function NewAssessment() {
 
       {selectedClient && <ClientContextBar client={selectedClient} />}
 
-      {/* ── Main card ── */}
       <div className="main-calculator-card">
         <div className="calculator-layout">
-          {/* Left: form */}
           <div className="left-panel">
             {method === 'navy' && (
               <NavyCalculator
@@ -783,6 +555,7 @@ export default function NewAssessment() {
                 handleReset={handleReset}
               />
             )}
+
             {method === 'bioimpedance' && (
               <BioimpedanceCalculator
                 data={
@@ -799,6 +572,7 @@ export default function NewAssessment() {
                 handleReset={handleReset}
               />
             )}
+
             {method === 'skinfold' && (
               <SkinfoldCalculator
                 data={{ ...commonData, ...specificData }}
@@ -809,6 +583,7 @@ export default function NewAssessment() {
                 handleReset={handleReset}
               />
             )}
+
             {method === 'imc' && (
               <ImcCalculator
                 data={{ ...commonData, waist: 0, neck: 0, hip: 0 } as NavyAssessmentInput}
@@ -824,11 +599,9 @@ export default function NewAssessment() {
             )}
           </div>
 
-          {/* Right: results */}
           <ResultCards result={currentResult} method={method} />
         </div>
 
-        {/* ── Card footer: notes + save ── */}
         <div className="assessment-footer">
           <div className="assessment-notes">
             <label className="field-label">Observações</label>
@@ -845,8 +618,12 @@ export default function NewAssessment() {
           <div className="assessment-save-area">
             {savedMessage && <div className="save-success-message">{savedMessage}</div>}
             <div className="save-btn-wrapper">
-              <button onClick={handleSaveAssessment} disabled={!currentResult} className="btn-save">
-                Salvar Avaliação
+              <button
+                onClick={handleSaveAssessment}
+                disabled={!currentResult || isCalculating || isSaving}
+                className="btn-save"
+              >
+                {isSaving ? 'Salvando...' : isCalculating ? 'Calculando...' : 'Salvar Avaliação'}
               </button>
             </div>
             {clientId && <p className="save-hint">Será vinculada ao cliente atual</p>}
