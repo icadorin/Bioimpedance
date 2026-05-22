@@ -1,0 +1,19 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "clients": "Clientes",
+    "newAssessment": "Nova avaliação",
+    "history": "Histórico",
+    "pdfs": "PDFs",
+    "settings": "Configurações",
+    "payments": "Pagamentos",
+    "lightTheme": "Tema claro",
+    "darkTheme": "Tema escuro"
+  },
+
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "theme": "Tema"
+  }
+}
