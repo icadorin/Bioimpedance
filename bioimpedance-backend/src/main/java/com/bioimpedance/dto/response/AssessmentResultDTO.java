@@ -17,10 +17,7 @@ public class AssessmentResultDTO {
     private Double tdee;
     private Double targetCalories;
     private String bodyFatLevel;
-
-    // Detalhes específicos do método
     private MethodDetailsDTO methodDetails;
-
     private Integer protein;
     private Integer carbs;
     private Integer fat;

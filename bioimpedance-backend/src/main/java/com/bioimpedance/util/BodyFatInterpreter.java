@@ -1,4 +1,4 @@
-package com.bioimpedance.utils;
+package com.bioimpedance.util;
 
 import org.springframework.stereotype.Component;
 

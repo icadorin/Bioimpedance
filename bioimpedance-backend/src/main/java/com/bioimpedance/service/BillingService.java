@@ -93,30 +93,34 @@ public class BillingService {
             throw new IllegalArgumentException("Price ID do plano " + plan.getLabel() + " nao configurado");
         }
 
-        Stripe.apiKey = stripeProperties.getSecretKey();
+        try {
+            Stripe.apiKey = stripeProperties.getSecretKey();
 
-        SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
-            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-            .setSuccessUrl(stripeProperties.getSuccessUrl())
-            .setCancelUrl(stripeProperties.getCancelUrl())
-            .setClientReferenceId("current-account")
-            .putMetadata("plan", plan.getSlug())
-            .addLineItem(
-                SessionCreateParams.LineItem.builder()
-                    .setPrice(priceId)
-                    .setQuantity(1L)
-                    .build()
-            );
+            SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setSuccessUrl(stripeProperties.getSuccessUrl())
+                .setCancelUrl(stripeProperties.getCancelUrl())
+                .setClientReferenceId("current-account")
+                .putMetadata("plan", plan.getSlug())
+                .addLineItem(
+                    SessionCreateParams.LineItem.builder()
+                        .setPrice(priceId)
+                        .setQuantity(1L)
+                        .build()
+                );
 
-        String customerId = latestCustomerId();
-        if (hasText(customerId)) {
-            paramsBuilder.setCustomer(customerId);
-        } else if (hasText(dto.getEmail())) {
-            paramsBuilder.setCustomerEmail(dto.getEmail());
+            String customerId = latestCustomerId();
+            if (hasText(customerId)) {
+                paramsBuilder.setCustomer(customerId);
+            } else if (hasText(dto.getEmail())) {
+                paramsBuilder.setCustomerEmail(dto.getEmail());
+            }
+
+            Session session = Session.create(paramsBuilder.build());
+            return CheckoutResponseDTO.builder().url(session.getUrl()).build();
+        } catch (StripeException e) {
+            throw new RuntimeException("Falha na comunicação com o Stripe", e);
         }
-
-        Session session = Session.create(paramsBuilder.build());
-        return CheckoutResponseDTO.builder().url(session.getUrl()).build();
     }
 
     public CustomerPortalResponseDTO createCustomerPortalSession() throws StripeException {
@@ -127,18 +131,22 @@ public class BillingService {
             throw new IllegalArgumentException("Nenhum cliente Stripe encontrado para a assinatura atual");
         }
 
-        Stripe.apiKey = stripeProperties.getSecretKey();
+        try {
+            Stripe.apiKey = stripeProperties.getSecretKey();
 
-        com.stripe.param.billingportal.SessionCreateParams params =
-            com.stripe.param.billingportal.SessionCreateParams.builder()
-                .setCustomer(customerId)
-                .setReturnUrl(stripeProperties.getPortalReturnUrl())
-                .build();
+            com.stripe.param.billingportal.SessionCreateParams params =
+                com.stripe.param.billingportal.SessionCreateParams.builder()
+                    .setCustomer(customerId)
+                    .setReturnUrl(stripeProperties.getPortalReturnUrl())
+                    .build();
 
-        com.stripe.model.billingportal.Session session =
-            com.stripe.model.billingportal.Session.create(params);
+            com.stripe.model.billingportal.Session session =
+                com.stripe.model.billingportal.Session.create(params);
 
-        return CustomerPortalResponseDTO.builder().url(session.getUrl()).build();
+            return CustomerPortalResponseDTO.builder().url(session.getUrl()).build();
+        } catch (StripeException e) {
+            throw new RuntimeException("Falha ao criar portal do cliente no Stripe", e);
+        }
     }
 
     @Transactional
@@ -166,7 +174,9 @@ public class BillingService {
                 }
             }
         } catch (SignatureVerificationException | JsonProcessingException ex) {
-            throw new IllegalArgumentException("Webhook Stripe invalido");
+            throw new IllegalArgumentException("Webhook Stripe inválido ou assinatura incorreta");
+        } catch (Exception ex) {
+            throw new RuntimeException("Erro inesperado ao processar webhook", ex);
         }
     }
 

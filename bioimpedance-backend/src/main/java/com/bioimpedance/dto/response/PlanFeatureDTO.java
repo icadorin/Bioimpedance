@@ -8,7 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class PlanFeatureDTO {
-
     private String key;
     private String label;
     private boolean included;

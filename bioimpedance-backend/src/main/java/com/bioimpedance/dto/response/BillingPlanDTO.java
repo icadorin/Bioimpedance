@@ -10,7 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class BillingPlanDTO {
-
     private String plan;
     private String name;
     private int sortOrder;

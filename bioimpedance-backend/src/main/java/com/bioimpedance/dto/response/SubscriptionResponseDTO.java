@@ -11,7 +11,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class SubscriptionResponseDTO {
-
     private String plan;
     private String planName;
     private String status;

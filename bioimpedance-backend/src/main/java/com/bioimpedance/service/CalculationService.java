@@ -1,16 +1,15 @@
 package com.bioimpedance.service;
 
 import com.bioimpedance.constants.ActivityLevel;
-import com.bioimpedance.constants.AssessmentMethod;
 import com.bioimpedance.constants.Gender;
 import com.bioimpedance.dto.request.CalculateRequestDTO;
 import com.bioimpedance.dto.response.CalculationResultDTO;
 import com.bioimpedance.dto.response.MethodDetailItem;
 import com.bioimpedance.dto.response.MethodDetailsDTO;
 import com.bioimpedance.dto.response.RecommendationDTO;
-import com.bioimpedance.utils.BodyFatCalculator;
-import com.bioimpedance.utils.BodyFatInterpreter;
-import com.bioimpedance.utils.MetabolicCalculator;
+import com.bioimpedance.util.BodyFatCalculator;
+import com.bioimpedance.util.BodyFatInterpreter;
+import com.bioimpedance.util.MetabolicCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,65 +25,71 @@ public class CalculationService {
     private final RecommendationService recommendationService;
 
     public CalculationResultDTO calculate(CalculateRequestDTO dto) {
+        try {
+            validateBase(dto);
+            validateMethodSpecific(dto);
 
-        validateBase(dto);
+            double imc = metabolicCalculator.calculateIMC(dto.getWeight(), dto.getHeight());
+            double bmr = metabolicCalculator.calculateBMR(
+                dto.getWeight(), dto.getHeight(), dto.getAge(), dto.getGender().name());
 
-        double imc = metabolicCalculator.calculateIMC(dto.getWeight(), dto.getHeight());
-        double bmr = metabolicCalculator.calculateBMR(
-            dto.getWeight(), dto.getHeight(), dto.getAge(), dto.getGender().name());
+            ActivityLevel activityLevel = parseActivityLevel(dto.getActivityLevel());
+            double tdee = metabolicCalculator.calculateTDEE(bmr, activityLevel);
 
-        ActivityLevel activityLevel = parseActivityLevel(dto.getActivityLevel());
-        double tdee = metabolicCalculator.calculateTDEE(bmr, activityLevel);
+            double bodyFat;
+            MethodDetailsDTO methodDetails;
 
-        double bodyFat;
-        MethodDetailsDTO methodDetails;
-
-        switch (dto.getMethod()) {
-            case NAVY -> {
-                bodyFat = calcNavy(dto);
-                methodDetails = buildNavyDetails(dto, bodyFat);
+            switch (dto.getMethod()) {
+                case NAVY -> {
+                    bodyFat = calcNavy(dto);
+                    methodDetails = buildNavyDetails(dto, bodyFat);
+                }
+                case BIOIMPEDANCE -> {
+                    bodyFat = calcBio(dto);
+                    methodDetails = buildBioDetails(dto);
+                }
+                case SKINFOLD -> {
+                    bodyFat = calcSkinfold(dto);
+                    methodDetails = buildSkinfoldDetails(dto, bodyFat);
+                }
+                default -> {
+                    bodyFat = 0.0;
+                    methodDetails = buildImcDetails(imc);
+                }
             }
-            case BIOIMPEDANCE -> {
-                bodyFat = calcBio(dto);
-                methodDetails = buildBioDetails(dto);
-            }
-            case SKINFOLD -> {
-                bodyFat = calcSkinfold(dto);
-                methodDetails = buildSkinfoldDetails(dto, bodyFat);
-            }
-            default -> {
-                bodyFat = 0.0;
-                methodDetails = buildImcDetails(imc);
-            }
+
+            double leanMass = metabolicCalculator.calculateLeanMass(dto.getWeight(), bodyFat);
+            double fatMass = metabolicCalculator.calculateFatMass(dto.getWeight(), bodyFat);
+            double ffmi = metabolicCalculator.calculateFFMI(leanMass, dto.getHeight());
+
+            String bodyFatLevel = interpreter.interpretBodyFat(dto.getGender().name(), bodyFat);
+
+            String objective = dto.getObjective() != null ? dto.getObjective() : "maintenance";
+            RecommendationDTO recommendation = recommendationService.generateRecommendation(
+                tdee, objective, bodyFat, dto.getWeight(), dto.getGender().name());
+
+            return CalculationResultDTO.builder()
+                .imc(round2(imc))
+                .bodyFat(round2(bodyFat))
+                .leanMass(round2(leanMass))
+                .fatMass(round2(fatMass))
+                .ffmi(round2(ffmi))
+                .bmr(round2(bmr))
+                .tdee(round2(tdee))
+                .targetCalories((double) recommendation.getTargetCalories())
+                .bodyFatLevel(bodyFatLevel)
+                .protein(recommendation.getProtein())
+                .carbs(recommendation.getCarbs())
+                .fat(recommendation.getFat())
+                .trainingType(recommendation.getTrainingType())
+                .cardio(recommendation.getCardio())
+                .methodDetails(methodDetails)
+                .build();
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao realizar cálculo corporal", e);
         }
-
-        double leanMass = metabolicCalculator.calculateLeanMass(dto.getWeight(), bodyFat);
-        double fatMass = metabolicCalculator.calculateFatMass(dto.getWeight(), bodyFat);
-        double ffmi = metabolicCalculator.calculateFFMI(leanMass, dto.getHeight());
-
-        String bodyFatLevel = interpreter.interpretBodyFat(dto.getGender().name(), bodyFat);
-
-        String objective = dto.getObjective() != null ? dto.getObjective() : "maintenance";
-        RecommendationDTO recommendation = recommendationService.generateRecommendation(
-            tdee, objective, bodyFat, dto.getWeight(), dto.getGender().name());
-
-        return CalculationResultDTO.builder()
-            .imc(round2(imc))
-            .bodyFat(round2(bodyFat))
-            .leanMass(round2(leanMass))
-            .fatMass(round2(fatMass))
-            .ffmi(round2(ffmi))
-            .bmr(round2(bmr))
-            .tdee(round2(tdee))
-            .targetCalories((double) recommendation.getTargetCalories())
-            .bodyFatLevel(bodyFatLevel)
-            .protein(recommendation.getProtein())
-            .carbs(recommendation.getCarbs())
-            .fat(recommendation.getFat())
-            .trainingType(recommendation.getTrainingType())
-            .cardio(recommendation.getCardio())
-            .methodDetails(methodDetails)
-            .build();
     }
 
     private double calcNavy(CalculateRequestDTO dto) {
@@ -204,5 +209,30 @@ public class CalculationService {
 
     private double round2(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private void validateMethodSpecific(CalculateRequestDTO dto) {
+        switch (dto.getMethod()) {
+            case NAVY -> {
+                if (nvl(dto.getWaist()) <= 0)
+                    throw new IllegalArgumentException("Circunferência da cintura é obrigatória para o método Navy");
+                if (nvl(dto.getNeck()) <= 0)
+                    throw new IllegalArgumentException("Circunferência do pescoço é obrigatória para o método Navy");
+                if (dto.getGender() == Gender.FEMALE && nvl(dto.getHip()) <= 0)
+                    throw new IllegalArgumentException("Circunferência do quadril é obrigatória para mulheres no método Navy");
+            }
+            case BIOIMPEDANCE -> {
+                if (nvl(dto.getResistance()) <= 0)
+                    throw new IllegalArgumentException("Resistência é obrigatória para bioimpedância");
+            }
+            case SKINFOLD -> {
+                String protocol = dto.getProtocol() != null ? dto.getProtocol() : "jp3";
+                if (protocol.equals("jp3") || protocol.equals("dw4")) {
+                    if (nvl(dto.getTriceps()) <= 0 || nvl(dto.getSubscapular()) <= 0) {
+                        throw new IllegalArgumentException("Dobras cutâneas insuficientes para o protocolo selecionado");
+                    }
+                }
+            }
+        }
     }
 }

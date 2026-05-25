@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/assessments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AssessmentController {
 
     private final AssessmentService assessmentService;

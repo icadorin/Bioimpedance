@@ -1,31 +1,43 @@
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
   application:
     name: bioimpedance-app
 
   datasource:
-    url: jdbc:postgresql://ep-old-darkness-accnbfel-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_b6RUnXsM4wZE
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+jwt:
+  expiration: 900000
+  refresh-expiration: 604800000
+
 server:
-  port: 8080
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: classpath:certs/localhost+1.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
-  success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/settings?billing=success}
-  cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/settings?billing=cancelled}
-  portal-return-url: ${STRIPE_PORTAL_RETURN_URL:http://localhost:5173/settings}
+  success-url: ${STRIPE_SUCCESS_URL:https://localhost:5173/settings?billing=success}
+  cancel-url: ${STRIPE_CANCEL_URL:https://localhost:5173/settings?billing=cancelled}
+  portal-return-url: ${STRIPE_PORTAL_RETURN_URL:https://localhost:5173/settings}
   prices:
     basic: ${STRIPE_PRICE_BASIC:}
     pro: ${STRIPE_PRICE_PRO:}
@@ -34,8 +46,8 @@ stripe:
 billing:
   default-plan: ${BILLING_DEFAULT_PLAN:BASIC}
 
-# Configurações opcionais úteis
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
+    com.bioimpedance: DEBUG
+    org.hibernate.SQL: WARN

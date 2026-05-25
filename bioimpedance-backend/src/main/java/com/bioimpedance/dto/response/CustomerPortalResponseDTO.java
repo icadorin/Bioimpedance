@@ -8,6 +8,5 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class CustomerPortalResponseDTO {
-
     private String url;
 }

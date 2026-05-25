@@ -1,4 +1,4 @@
-package com.bioimpedance.utils;
+package com.bioimpedance.util;
 
 import com.bioimpedance.constants.ActivityLevel;
 import org.springframework.stereotype.Component;

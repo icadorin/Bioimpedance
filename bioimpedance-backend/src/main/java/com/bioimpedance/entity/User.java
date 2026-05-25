@@ -1,48 +1,42 @@
 package com.bioimpedance.entity;
 
-import com.bioimpedance.constants.ClientStatus;
-import com.bioimpedance.constants.Gender;
+import com.bioimpedance.constants.Plan;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "clients")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Client {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
-    private String phone;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Gender gender;
+    private String password;
 
     @Column(nullable = false)
-    private LocalDate birthDate;
-
-    private String goal;
-    private String notes;
+    private String name;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private ClientStatus status = ClientStatus.ACTIVE;
+    private Plan plan = Plan.BASIC;
+
+    private String stripeCustomerId;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

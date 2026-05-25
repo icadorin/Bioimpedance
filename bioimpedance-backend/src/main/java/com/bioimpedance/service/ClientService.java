@@ -21,11 +21,15 @@ public class ClientService {
 
     @Transactional
     public ClientResponseDTO create(ClientRequestDTO dto) {
+        String emailLower = dto.getEmail().trim().toLowerCase();
+
         if (clientRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email já cadastrado");
         }
 
         Client client = clientMapper.toEntity(dto);
+        client.setEmail(emailLower);
+
         client = clientRepository.save(client);
         return clientMapper.toResponse(client);
     }
